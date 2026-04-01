@@ -1,0 +1,36 @@
+# macOS metadata
+._*
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Angular
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/cache
+.sass-cache/
+
+# IDEs and editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+*.sublime-workspace
+*.launch
+
+# Misc
+/coverage
+testem.log
+__screenshots__/
