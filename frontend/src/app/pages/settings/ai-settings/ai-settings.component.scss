@@ -1,0 +1,173 @@
+@use '../../../creamsicle-desktop/styles/variables' as *;
+
+.ai-settings {
+  h3 {
+    margin: 0 0 $spacing-1;
+    font-family: $font-display;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: var(--text-primary);
+  }
+}
+
+.section-desc {
+  color: var(--text-muted);
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-4;
+}
+
+.provider-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-3;
+  margin-bottom: $spacing-4;
+}
+
+.provider-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-1-5;
+  padding: $spacing-3;
+  border: 2px solid var(--border-subtle);
+  border-radius: $radius-lg;
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--border-default);
+    background: var(--hover-bg);
+  }
+
+  &.selected {
+    border-color: var(--accent-primary);
+    background: var(--selected-bg-muted);
+  }
+}
+
+.provider-icon {
+  font-size: 28px;
+}
+
+.provider-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.provider-desc {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.provider-config {
+  margin-bottom: $spacing-4;
+}
+
+.form-group {
+  margin-bottom: $spacing-3;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-1;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: var(--text-primary);
+  }
+
+  input, select {
+    width: 100%;
+    padding: $spacing-2 $spacing-3;
+    border: 1px solid var(--border-default);
+    border-radius: $radius-md;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-family: $font-body;
+    font-size: $font-size-sm;
+    outline: none;
+
+    &:focus {
+      border-color: var(--focus-ring);
+    }
+  }
+
+  input[type="number"] {
+    max-width: 200px;
+  }
+}
+
+.form-hint {
+  display: block;
+  margin-top: $spacing-1;
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+}
+
+.ai-actions {
+  display: flex;
+  gap: $spacing-3;
+  margin-bottom: $spacing-3;
+}
+
+.test-btn {
+  padding: $spacing-2 $spacing-4;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.save-btn {
+  padding: $spacing-2 $spacing-4;
+  border: none;
+  border-radius: $radius-md;
+  background: var(--accent-primary);
+  color: white;
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.test-result {
+  padding: $spacing-2 $spacing-3;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+
+  &.success {
+    background: rgba(39, 174, 96, 0.1);
+    color: #27ae60;
+    border: 1px solid rgba(39, 174, 96, 0.3);
+  }
+
+  &.error {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+  }
+}

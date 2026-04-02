@@ -1,0 +1,85 @@
+@use './creamsicle-desktop/styles/variables' as *;
+
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+desktop-window {
+  width: 100%;
+  height: 100%;
+}
+
+// Fix status bar overlap: replace absolute-center with a 3-column grid
+desktop-status-bar ::ng-deep .status-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+
+  .status-center {
+    position: static;
+    transform: none;
+  }
+
+  .status-right {
+    justify-content: flex-end;
+  }
+}
+
+.titlebar-spacer {
+  width: 70px; // Space for macOS traffic lights
+}
+
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 $spacing-3;
+  gap: $spacing-3;
+}
+
+.toolbar-nav {
+  display: flex;
+  gap: $spacing-1;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: $spacing-1-5;
+  padding: $spacing-1-5 $spacing-3;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--selected-bg-muted);
+    color: var(--text-accent);
+  }
+}
+
+.nav-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: $spacing-2;
+}

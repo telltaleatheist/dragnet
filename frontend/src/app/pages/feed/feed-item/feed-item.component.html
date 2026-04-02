@@ -1,0 +1,60 @@
+<div
+  class="feed-item"
+  [class.opened]="item.opened"
+  [class.bookmarked]="item.bookmarked"
+>
+  <!-- Score badge -->
+  <div class="item-score" [ngClass]="scoreClass">
+    {{ item.aiScore > 0 ? item.aiScore.toFixed(0) : '–' }}
+  </div>
+
+  <!-- Content -->
+  <div class="item-content" (click)="open.emit()">
+    <div class="item-header">
+      <span class="platform-icon">{{ platformIcon }}</span>
+      <span class="item-author">{{ item.author }}</span>
+      <span class="item-source">{{ item.sourceAccount }}</span>
+      <span class="item-time">{{ timeAgo }}</span>
+    </div>
+
+    <div class="item-title">{{ item.title }}</div>
+
+    @if (item.aiSummary) {
+      <div class="item-summary">{{ item.aiSummary }}</div>
+    }
+
+    @if (item.aiTags && item.aiTags.length > 0) {
+      <div class="item-tags">
+        @for (tag of item.aiTags; track tag) {
+          <span class="tag-pill">{{ tag }}</span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Thumbnail -->
+  @if (item.thumbnailUrl) {
+    <div class="item-thumbnail">
+      <img [src]="item.thumbnailUrl" [alt]="item.title" loading="lazy" />
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="item-actions">
+    <button
+      class="action-btn"
+      [class.active]="item.bookmarked"
+      title="Bookmark"
+      (click)="bookmark.emit(); $event.stopPropagation()"
+    >
+      {{ item.bookmarked ? '★' : '☆' }}
+    </button>
+    <button
+      class="action-btn dismiss-btn"
+      title="Dismiss"
+      (click)="dismiss.emit(); $event.stopPropagation()"
+    >
+      ✕
+    </button>
+  </div>
+</div>

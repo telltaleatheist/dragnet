@@ -1,0 +1,138 @@
+@use '../../creamsicle-desktop/styles/variables' as *;
+
+.sources-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: $spacing-4;
+}
+
+.sources-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-4;
+
+  h2 {
+    margin: 0;
+    font-family: $font-display;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: var(--text-primary);
+  }
+}
+
+.refresh-btn {
+  padding: $spacing-1-5 $spacing-3;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: $spacing-8 0;
+  color: var(--text-muted);
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: $spacing-3;
+  }
+
+  h3 {
+    margin: 0 0 $spacing-2;
+    color: var(--text-secondary);
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+  }
+}
+
+.sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-3;
+}
+
+.source-card {
+  padding: $spacing-3;
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.source-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  margin-bottom: $spacing-2;
+  padding-bottom: $spacing-2;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.status-indicator {
+  font-size: 12px;
+}
+
+.source-name {
+  font-weight: $font-weight-medium;
+  color: var(--text-primary);
+  font-size: $font-size-sm;
+}
+
+.source-platform {
+  margin-left: auto;
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  background: var(--bg-muted);
+  padding: 1px $spacing-2;
+  border-radius: $radius-full;
+}
+
+.source-details {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-1;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-xs;
+
+  &.error {
+    color: #e74c3c;
+  }
+}
+
+.detail-label {
+  color: var(--text-muted);
+}
+
+.detail-value {
+  color: var(--text-secondary);
+  font-weight: $font-weight-medium;
+}
+
+.error-message {
+  margin-top: $spacing-1;
+  padding: $spacing-2;
+  border-radius: $radius-sm;
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  font-size: $font-size-xs;
+  word-break: break-word;
+}

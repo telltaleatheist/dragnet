@@ -1,0 +1,249 @@
+@use '../../../creamsicle-desktop/styles/variables' as *;
+
+.sources-settings {
+  h3 {
+    margin: 0 0 $spacing-1;
+    font-family: $font-display;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: var(--text-primary);
+  }
+}
+
+.section-desc {
+  color: var(--text-muted);
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-4;
+}
+
+.source-section {
+  margin-bottom: $spacing-4;
+  padding: $spacing-3;
+  border: 1px solid var(--border-subtle);
+  border-radius: $radius-lg;
+  background: var(--bg-surface);
+}
+
+.source-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-2;
+}
+
+.platform-name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-1-5;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+  }
+}
+
+.toggle-label {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+}
+
+.source-desc {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.subsection-title {
+  margin: $spacing-3 0 $spacing-1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text-secondary);
+}
+
+.feed-types {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  margin-bottom: $spacing-2;
+}
+
+.feed-types-label {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+}
+
+.timeframe-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  margin-bottom: $spacing-2;
+}
+
+.timeframe-select {
+  padding: $spacing-1 $spacing-2;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--focus-ring);
+  }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: $spacing-1;
+  font-size: $font-size-sm;
+  color: var(--text-primary);
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+  }
+}
+
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-1;
+  margin-bottom: $spacing-2;
+}
+
+.source-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-1-5 $spacing-2;
+  border-radius: $radius-md;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+}
+
+.item-text {
+  font-size: $font-size-sm;
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-meta {
+  color: var(--text-muted);
+  font-size: $font-size-xs;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+  }
+}
+
+.empty-hint {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  padding: $spacing-1 0;
+  margin: 0;
+}
+
+.add-row {
+  display: flex;
+  gap: $spacing-2;
+
+  input {
+    flex: 1;
+    padding: $spacing-1-5 $spacing-2;
+    border: 1px solid var(--border-default);
+    border-radius: $radius-md;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-family: $font-body;
+    font-size: $font-size-sm;
+    outline: none;
+
+    &:focus {
+      border-color: var(--focus-ring);
+    }
+  }
+
+  &.add-row-multi {
+    flex-wrap: wrap;
+
+    input {
+      min-width: 120px;
+    }
+  }
+}
+
+.add-btn {
+  flex-shrink: 0;
+  padding: $spacing-1-5 $spacing-3;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+}
+
+.save-btn {
+  margin-top: $spacing-2;
+  padding: $spacing-2 $spacing-4;
+  border: none;
+  border-radius: $radius-md;
+  background: var(--accent-primary);
+  color: white;
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: opacity $duration-fast $ease-out;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

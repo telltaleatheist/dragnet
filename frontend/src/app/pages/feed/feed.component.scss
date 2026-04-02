@@ -1,0 +1,126 @@
+@use '../../creamsicle-desktop/styles/variables' as *;
+
+:host {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-page {
+  height: 100%;
+  width: 100%;
+
+  desktop-split-pane {
+    height: 100%;
+  }
+}
+
+.feed-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  padding: $spacing-3;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  padding: $spacing-2 $spacing-3;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  outline: none;
+  transition: border-color $duration-fast $ease-out;
+
+  &:focus {
+    border-color: var(--focus-ring);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.feed-count {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.feed-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-2;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+}
+
+.feed-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  color: var(--text-muted);
+
+  .empty-icon {
+    font-size: 48px;
+  }
+
+  h3 {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+  }
+}
+
+.feed-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-3;
+  padding: $spacing-3;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.page-btn {
+  padding: $spacing-1-5 $spacing-3;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: $font-size-sm;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.page-info {
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+}

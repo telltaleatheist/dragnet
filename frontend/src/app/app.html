@@ -1,0 +1,78 @@
+<div class="app-container" [attr.data-theme]="themeService.resolvedTheme()">
+  <desktop-window
+    title="Dragnet"
+    [showTitlebar]="true"
+    [showToolbar]="true"
+    [showStatusBar]="true"
+    [frameless]="true"
+  >
+    <!-- Titlebar Left (macOS traffic light spacer) -->
+    <ng-container titlebar-left>
+      <div class="titlebar-spacer"></div>
+    </ng-container>
+
+    <!-- Titlebar Right -->
+    <ng-container titlebar-right>
+      <desktop-button variant="ghost" size="xs" (click)="toggleTheme()">
+        {{ themeService.resolvedTheme() === 'dark' ? '☀' : '☾' }}
+      </desktop-button>
+    </ng-container>
+
+    <!-- Toolbar -->
+    <ng-container toolbar>
+      <div class="app-toolbar">
+        <nav class="toolbar-nav">
+          <a routerLink="/feed" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon">📡</span>
+            <span class="nav-label">Feed</span>
+          </a>
+          <a routerLink="/sources" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon">🔌</span>
+            <span class="nav-label">Sources</span>
+          </a>
+          <a routerLink="/settings" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon">⚙</span>
+            <span class="nav-label">Settings</span>
+          </a>
+        </nav>
+
+        <div class="toolbar-spacer"></div>
+
+        <div class="toolbar-actions">
+          <desktop-button
+            variant="secondary"
+            size="sm"
+            icon="🧠"
+            [loading]="feedStore.curateRunning()"
+            [disabled]="feedStore.scanRunning()"
+            (click)="triggerCurate()"
+          >
+            Curate
+          </desktop-button>
+          <desktop-button
+            variant="primary"
+            size="sm"
+            icon="🔍"
+            [loading]="feedStore.scanRunning()"
+            [disabled]="feedStore.curateRunning()"
+            (click)="triggerScan()"
+          >
+            Scan Now
+          </desktop-button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Router Outlet (page content) -->
+    <router-outlet />
+
+    <!-- Status Bar -->
+    <ng-container statusbar>
+      <desktop-status-bar
+        [leftItems]="statusLeftItems()"
+        [rightItems]="statusRightItems"
+        [centerText]="statusCenterText()"
+      />
+    </ng-container>
+  </desktop-window>
+</div>

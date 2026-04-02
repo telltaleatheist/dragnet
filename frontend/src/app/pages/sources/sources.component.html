@@ -1,0 +1,55 @@
+<div class="sources-page">
+  <div class="sources-container">
+    <div class="page-header">
+      <h2>Source Status</h2>
+      <button class="refresh-btn" (click)="loadData()">Refresh</button>
+    </div>
+
+    @if (loading() && sources().length === 0) {
+      <div class="empty-state">
+        <p>Loading source statuses...</p>
+      </div>
+    }
+
+    @if (!loading() && sources().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">🔌</div>
+        <h3>No source data yet</h3>
+        <p>Source status will appear here after your first scan.</p>
+      </div>
+    }
+
+    @if (sources().length > 0) {
+      <div class="sources-grid">
+        @for (source of sources(); track source.source_key) {
+          <div class="source-card">
+            <div class="source-header">
+              <span class="status-indicator">{{ getStatusIcon(source) }}</span>
+              <span class="source-name">{{ source.source_key }}</span>
+              <span class="source-platform">{{ source.platform }}</span>
+            </div>
+            <div class="source-details">
+              <div class="detail-row">
+                <span class="detail-label">Last success</span>
+                <span class="detail-value">{{ formatTime(source.last_success_at) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Items fetched</span>
+                <span class="detail-value">{{ source.total_items_fetched }}</span>
+              </div>
+              @if (source.consecutive_failures > 0) {
+                <div class="detail-row error">
+                  <span class="detail-label">Failures</span>
+                  <span class="detail-value">{{ source.consecutive_failures }} consecutive</span>
+                </div>
+                @if (source.last_error_message) {
+                  <div class="error-message">{{ source.last_error_message }}</div>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

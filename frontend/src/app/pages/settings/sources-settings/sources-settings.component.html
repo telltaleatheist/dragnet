@@ -1,0 +1,268 @@
+<div class="sources-settings">
+  <h3>Sources</h3>
+  <p class="section-desc">Manage the accounts, channels, and feeds that Dragnet watches.</p>
+
+  <!-- Twitter -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">Twitter</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="twitterEnabled()" (ngModelChange)="twitterEnabled.set($event)" />
+        <span class="toggle-label">{{ twitterEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+
+    @if (twitterEnabled()) {
+      <div class="source-list">
+        @for (account of twitterAccounts(); track account) {
+          <div class="source-item">
+            <span class="item-text">@{{ account }}</span>
+            <button class="remove-btn" (click)="removeTwitterAccount(account)">&times;</button>
+          </div>
+        }
+        @empty {
+          <p class="empty-hint">No accounts added yet.</p>
+        }
+      </div>
+      <div class="add-row">
+        <input
+          type="text"
+          [(ngModel)]="newTwitterAccount"
+          placeholder="@account"
+          (keydown.enter)="addTwitterAccount()"
+        />
+        <button class="add-btn" (click)="addTwitterAccount()">Add</button>
+      </div>
+    }
+  </div>
+
+  <!-- Reddit -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">Reddit</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="redditEnabled()" (ngModelChange)="redditEnabled.set($event)" />
+        <span class="toggle-label">{{ redditEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+
+    @if (redditEnabled()) {
+      <div class="feed-types">
+        <span class="feed-types-label">Feed types:</span>
+        @for (type of ['new', 'top', 'hot', 'rising']; track type) {
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [checked]="redditFeedTypes().includes($any(type))"
+              (change)="toggleFeedType($any(type))"
+            />
+            {{ type }}
+          </label>
+        }
+      </div>
+
+      @if (redditFeedTypes().includes('top')) {
+        <div class="timeframe-row">
+          <span class="feed-types-label">Top timeframe:</span>
+          <select
+            class="timeframe-select"
+            [ngModel]="redditTopTimeframe()"
+            (ngModelChange)="redditTopTimeframe.set($event)"
+          >
+            <option value="hour">Past hour</option>
+            <option value="day">Past 24 hours</option>
+            <option value="week">Past week</option>
+            <option value="month">Past month</option>
+            <option value="year">Past year</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+      }
+
+      <div class="source-list">
+        @for (sub of subreddits(); track sub) {
+          <div class="source-item">
+            <span class="item-text">r/{{ sub }}</span>
+            <button class="remove-btn" (click)="removeSubreddit(sub)">&times;</button>
+          </div>
+        }
+        @empty {
+          <p class="empty-hint">No subreddits added yet.</p>
+        }
+      </div>
+      <div class="add-row">
+        <input
+          type="text"
+          [(ngModel)]="newSubreddit"
+          placeholder="subreddit name"
+          (keydown.enter)="addSubreddit()"
+        />
+        <button class="add-btn" (click)="addSubreddit()">Add</button>
+      </div>
+    }
+  </div>
+
+  <!-- YouTube -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">YouTube</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="youtubeEnabled()" (ngModelChange)="youtubeEnabled.set($event)" />
+        <span class="toggle-label">{{ youtubeEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+
+    @if (youtubeEnabled()) {
+      <div class="source-list">
+        @for (channel of youtubeChannels(); track channel.channelId) {
+          <div class="source-item">
+            <span class="item-text">{{ channel.name }} <span class="item-meta">({{ channel.channelId }})</span></span>
+            <button class="remove-btn" (click)="removeYoutubeChannel(channel.channelId)">&times;</button>
+          </div>
+        }
+        @empty {
+          <p class="empty-hint">No channels added yet.</p>
+        }
+      </div>
+      <div class="add-row add-row-multi">
+        <input
+          type="text"
+          [(ngModel)]="newYoutubeChannelName"
+          placeholder="Channel name"
+        />
+        <input
+          type="text"
+          [(ngModel)]="newYoutubeChannelId"
+          placeholder="Channel ID (UC...)"
+          (keydown.enter)="addYoutubeChannel()"
+        />
+        <button class="add-btn" (click)="addYoutubeChannel()">Add</button>
+      </div>
+    }
+  </div>
+
+  <!-- RSS Feeds -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">RSS Feeds</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="webRssEnabled()" (ngModelChange)="webRssEnabled.set($event)" />
+        <span class="toggle-label">{{ webRssEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+
+    @if (webRssEnabled()) {
+      <div class="source-list">
+        @for (feed of rssFeeds(); track feed.url) {
+          <div class="source-item">
+            <span class="item-text">{{ feed.name }} <span class="item-meta">({{ feed.url }})</span></span>
+            <button class="remove-btn" (click)="removeRssFeed(feed.url)">&times;</button>
+          </div>
+        }
+        @empty {
+          <p class="empty-hint">No feeds added yet.</p>
+        }
+      </div>
+      <div class="add-row add-row-multi">
+        <input
+          type="text"
+          [(ngModel)]="newRssFeedName"
+          placeholder="Feed name"
+        />
+        <input
+          type="text"
+          [(ngModel)]="newRssFeedUrl"
+          placeholder="Feed URL"
+          (keydown.enter)="addRssFeed()"
+        />
+        <button class="add-btn" (click)="addRssFeed()">Add</button>
+      </div>
+    }
+  </div>
+
+  <!-- Reddit Search (Discovery) -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">Reddit Search</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="redditSearchEnabled()" (ngModelChange)="redditSearchEnabled.set($event)" />
+        <span class="toggle-label">{{ redditSearchEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+    <p class="source-desc">Searches Reddit for posts matching your configured subjects and figures. No manual keywords needed.</p>
+  </div>
+
+  <!-- Google News (Discovery) -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">Google News</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="googleNewsEnabled()" (ngModelChange)="googleNewsEnabled.set($event)" />
+        <span class="toggle-label">{{ googleNewsEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+    <p class="source-desc">Searches Google News RSS for articles matching your configured subjects and figures. Indexes news sites, YouTube, and blogs.</p>
+  </div>
+
+  <!-- TikTok -->
+  <div class="source-section">
+    <div class="source-header">
+      <span class="platform-name">TikTok</span>
+      <label class="toggle">
+        <input type="checkbox" [ngModel]="tiktokEnabled()" (ngModelChange)="tiktokEnabled.set($event)" />
+        <span class="toggle-label">{{ tiktokEnabled() ? 'Enabled' : 'Disabled' }}</span>
+      </label>
+    </div>
+
+    @if (tiktokEnabled()) {
+      <h4 class="subsection-title">Accounts</h4>
+      <div class="source-list">
+        @for (account of tiktokAccounts(); track account) {
+          <div class="source-item">
+            <span class="item-text">@{{ account }}</span>
+            <button class="remove-btn" (click)="removeTiktokAccount(account)">&times;</button>
+          </div>
+        }
+        @empty {
+          <p class="empty-hint">No accounts added yet.</p>
+        }
+      </div>
+      <div class="add-row">
+        <input
+          type="text"
+          [(ngModel)]="newTiktokAccount"
+          placeholder="@account"
+          (keydown.enter)="addTiktokAccount()"
+        />
+        <button class="add-btn" (click)="addTiktokAccount()">Add</button>
+      </div>
+
+      <h4 class="subsection-title">Hashtags</h4>
+      <div class="source-list">
+        @for (tag of tiktokHashtags(); track tag) {
+          <div class="source-item">
+            <span class="item-text">#{{ tag }}</span>
+            <button class="remove-btn" (click)="removeTiktokHashtag(tag)">&times;</button>
+          </div>
+        }
+        @empty {
+          <p class="empty-hint">No hashtags added yet.</p>
+        }
+      </div>
+      <div class="add-row">
+        <input
+          type="text"
+          [(ngModel)]="newTiktokHashtag"
+          placeholder="#hashtag"
+          (keydown.enter)="addTiktokHashtag()"
+        />
+        <button class="add-btn" (click)="addTiktokHashtag()">Add</button>
+      </div>
+    }
+  </div>
+
+  <!-- Save button -->
+  <button class="save-btn" [disabled]="saving()" (click)="save()">
+    {{ saving() ? 'Saving...' : saved() ? 'Saved!' : 'Save Sources' }}
+  </button>
+</div>

@@ -1,0 +1,58 @@
+@use '../../../creamsicle-desktop/styles/variables' as *;
+
+.sidebar {
+  height: 100%;
+  overflow-y: auto;
+  padding: $spacing-3;
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.sidebar-section {
+  margin-bottom: $spacing-4;
+}
+
+.section-title {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: $spacing-1-5;
+  padding: 0 $spacing-2;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  width: 100%;
+  padding: $spacing-1-5 $spacing-2;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  text-align: left;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--selected-bg-muted);
+    color: var(--text-accent);
+    font-weight: $font-weight-medium;
+  }
+}
+
+.sidebar-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}

@@ -1,0 +1,82 @@
+<div class="settings-page">
+  <div class="settings-container">
+    <!-- Tab navigation -->
+    <div class="settings-tabs">
+      @for (tab of tabs; track tab.id) {
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === tab.id"
+          (click)="activeTab.set(tab.id)"
+        >
+          <span class="tab-icon">{{ tab.icon }}</span>
+          <span>{{ tab.label }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Tab content -->
+    <div class="settings-content">
+      <!-- AI Provider Tab -->
+      @if (activeTab() === 'ai') {
+        <app-ai-settings [config]="config()" />
+      }
+
+      <!-- Scan Settings Tab -->
+      @if (activeTab() === 'scan') {
+        <div class="settings-section">
+          <h3>Scan Settings</h3>
+
+          <div class="form-group">
+            <label>Request Delay (ms)</label>
+            <input type="number" [(ngModel)]="requestDelayMs" min="500" max="10000" step="500" />
+            <span class="form-hint">Delay between requests to avoid rate limiting</span>
+          </div>
+
+          <div class="form-group">
+            <label>Max Results Per Source</label>
+            <input type="number" [(ngModel)]="maxResultsPerSource" min="5" max="100" step="5" />
+          </div>
+
+          <div class="form-group">
+            <label>Auto Scan Interval (minutes)</label>
+            <input type="number" [(ngModel)]="autoScanIntervalMinutes" min="15" max="1440" step="15" />
+          </div>
+
+          <div class="form-group">
+            <label>Max Item Age (days)</label>
+            <input type="number" [(ngModel)]="maxItemAgeDays" min="1" max="90" step="1" />
+            <span class="form-hint">Items older than this are filtered out during scanning</span>
+          </div>
+
+          <div class="form-group">
+            <label>Min Score to Show</label>
+            <input type="number" [(ngModel)]="minScoreToShow" min="0" max="10" step="1" />
+            <span class="form-hint">Minimum AI score for items to appear in the feed</span>
+          </div>
+
+          <button class="save-btn" [disabled]="saving()" (click)="saveScanSettings()">
+            {{ saving() ? 'Saving...' : 'Save Settings' }}
+          </button>
+        </div>
+      }
+
+      <!-- Sources Tab -->
+      @if (activeTab() === 'sources') {
+        <app-sources-settings [config]="config()" />
+      }
+
+      <!-- Data Tab -->
+      @if (activeTab() === 'data') {
+        <div class="settings-section">
+          <h3>Data Management</h3>
+          <div class="data-stats">
+            <div class="stat-row">
+              <span class="stat-label">Total items in database</span>
+              <span class="stat-value">{{ totalItems() }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

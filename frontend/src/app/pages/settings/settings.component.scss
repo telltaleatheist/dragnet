@@ -1,0 +1,157 @@
+@use '../../creamsicle-desktop/styles/variables' as *;
+
+.settings-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: $spacing-4;
+}
+
+.settings-container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: $spacing-1;
+  margin-bottom: $spacing-4;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: $spacing-2;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-1-5;
+  padding: $spacing-2 $spacing-3;
+  border: none;
+  border-radius: $radius-md;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--selected-bg-muted);
+    color: var(--text-accent);
+  }
+}
+
+.tab-icon {
+  font-size: 16px;
+}
+
+.settings-content {
+  min-height: 300px;
+}
+
+.settings-section {
+  h3 {
+    margin: 0 0 $spacing-3;
+    font-family: $font-display;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: var(--text-primary);
+  }
+}
+
+.section-desc {
+  color: var(--text-muted);
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-3;
+}
+
+.form-group {
+  margin-bottom: $spacing-4;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-1;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: var(--text-primary);
+  }
+
+  input, select {
+    width: 100%;
+    padding: $spacing-2 $spacing-3;
+    border: 1px solid var(--border-default);
+    border-radius: $radius-md;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-family: $font-body;
+    font-size: $font-size-sm;
+    outline: none;
+    transition: border-color $duration-fast $ease-out;
+
+    &:focus {
+      border-color: var(--focus-ring);
+    }
+  }
+
+  input[type="number"] {
+    max-width: 200px;
+  }
+}
+
+.form-hint {
+  display: block;
+  margin-top: $spacing-1;
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+}
+
+.save-btn {
+  padding: $spacing-2 $spacing-4;
+  border: none;
+  border-radius: $radius-md;
+  background: var(--accent-primary);
+  color: white;
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: opacity $duration-fast $ease-out;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.source-summary, .data-stats {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+}
+
+.source-row, .stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-2 $spacing-3;
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  font-size: $font-size-sm;
+}
+
+.source-label, .stat-label {
+  color: var(--text-secondary);
+}
+
+.source-value, .stat-value {
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}

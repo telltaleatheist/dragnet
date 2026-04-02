@@ -34,3 +34,4 @@ bazel-out/
 /coverage
 testem.log
 __screenshots__/
+dist-electron/

@@ -1,0 +1,75 @@
+<div class="feed-page">
+  <desktop-split-pane direction="horizontal" [primarySize]="220" [minSize]="180">
+    <!-- Sidebar -->
+    <div pane-primary>
+      <app-feed-sidebar />
+    </div>
+
+    <!-- Main Feed -->
+    <div pane-secondary class="feed-main">
+      <!-- Search bar -->
+      <div class="feed-header">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search items..."
+          [ngModel]="store.filters().search || ''"
+          (ngModelChange)="store.updateFilters({ search: $event || undefined })"
+        />
+        <span class="feed-count">{{ store.totalItems() }} items</span>
+      </div>
+
+      <!-- Loading state -->
+      @if (store.loading() && store.items().length === 0) {
+        <div class="feed-empty">
+          <div class="empty-icon">&#x23F3;</div>
+          <p>Loading...</p>
+        </div>
+      }
+
+      <!-- Empty state -->
+      @if (!store.loading() && store.items().length === 0) {
+        <div class="feed-empty">
+          <div class="empty-icon">&#x1F4E1;</div>
+          <h3>No items yet</h3>
+          <p>Click "Scan Now" in the toolbar to fetch content from your sources.</p>
+        </div>
+      }
+
+      <!-- Item list -->
+      <div class="feed-list">
+        @for (item of store.items(); track item.id) {
+          <app-feed-item
+            [item]="item"
+            (dismiss)="onDismiss(item)"
+            (bookmark)="onBookmark(item)"
+            (open)="onOpen(item)"
+          />
+        }
+      </div>
+
+      <!-- Pagination -->
+      @if (store.totalPages() > 1) {
+        <div class="feed-pagination">
+          <button
+            class="page-btn"
+            [disabled]="store.filters().page <= 1"
+            (click)="store.prevPage()"
+          >
+            Previous
+          </button>
+          <span class="page-info">
+            Page {{ store.filters().page }} of {{ store.totalPages() }}
+          </span>
+          <button
+            class="page-btn"
+            [disabled]="!store.hasMore()"
+            (click)="store.nextPage()"
+          >
+            Next
+          </button>
+        </div>
+      }
+    </div>
+  </desktop-split-pane>
+</div>
