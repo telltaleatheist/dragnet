@@ -20,6 +20,7 @@ export class FeedSidebarComponent {
 
   views: FilterOption[] = [
     { label: 'All Items', value: undefined, icon: '📋' },
+    { label: 'Curated', value: 'curated', icon: '◆' },
     { label: 'Bookmarked', value: 'bookmarked', icon: '★' },
     { label: 'Dismissed', value: 'dismissed', icon: '✕' },
   ];
@@ -40,18 +41,19 @@ export class FeedSidebarComponent {
     { label: 'Image', value: 'image', icon: '🖼' },
   ];
 
-  activeView: string | undefined = undefined;
   activePlatform: string | undefined = undefined;
   activeContentType: string | undefined = undefined;
 
   setView(option: FilterOption) {
-    this.activeView = option.value;
-    if (option.value === 'bookmarked') {
-      this.store.updateFilters({ bookmarked: true, dismissed: false });
+    this.store.activeView.set(option.value);
+    if (option.value === 'curated') {
+      this.store.updateFilters({ minScore: 1, bookmarked: false, dismissed: false });
+    } else if (option.value === 'bookmarked') {
+      this.store.updateFilters({ minScore: undefined, bookmarked: true, dismissed: false });
     } else if (option.value === 'dismissed') {
-      this.store.updateFilters({ bookmarked: false, dismissed: true });
+      this.store.updateFilters({ minScore: undefined, bookmarked: false, dismissed: true });
     } else {
-      this.store.updateFilters({ bookmarked: false, dismissed: false });
+      this.store.updateFilters({ minScore: undefined, bookmarked: false, dismissed: false });
     }
   }
 

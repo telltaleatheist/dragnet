@@ -22,6 +22,8 @@ export class FeedStoreService {
   readonly scoringProgress = signal<ScoringProgress | null>(null);
   readonly lastScanTime = signal<string | null>(null);
 
+  readonly activeView = signal<string | undefined>(undefined);
+
   readonly filters = signal<FeedFilters>({
     page: 1,
     limit: 20,
@@ -71,7 +73,7 @@ export class FeedStoreService {
     this.api.curateComplete$.subscribe(() => {
       this.curateRunning.set(false);
       this.scoringProgress.set(null);
-      this.loadFeed();
+      this.switchToCurated();
     });
 
     this.api.feedUpdated$.subscribe(() => {
@@ -130,6 +132,11 @@ export class FeedStoreService {
       },
       error: (err) => console.error('Failed to trigger curation:', err),
     });
+  }
+
+  switchToCurated() {
+    this.activeView.set('curated');
+    this.updateFilters({ minScore: 1, bookmarked: false, dismissed: false });
   }
 
   updateFilters(partial: Partial<FeedFilters>) {

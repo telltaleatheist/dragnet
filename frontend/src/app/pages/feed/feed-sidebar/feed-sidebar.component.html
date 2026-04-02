@@ -5,7 +5,7 @@
     @for (option of views; track option.label) {
       <button
         class="sidebar-item"
-        [class.active]="activeView === option.value"
+        [class.active]="store.activeView() === option.value"
         (click)="setView(option)"
       >
         @if (option.icon) {
