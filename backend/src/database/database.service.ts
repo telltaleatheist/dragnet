@@ -49,13 +49,19 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         'dragnet',
       );
     }
-    // Fallback for other platforms
     return path.join(os.homedir(), '.dragnet');
   }
 
   private initializeTables(): void {
+    // Drop old tables from previous architecture
     this.db.exec(`
-      CREATE TABLE IF NOT EXISTS items (
+      DROP TABLE IF EXISTS items;
+      DROP TABLE IF EXISTS scan_history;
+      DROP TABLE IF EXISTS source_status;
+    `);
+
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS bookmarks (
         id TEXT PRIMARY KEY,
         url TEXT UNIQUE NOT NULL,
         title TEXT,
@@ -79,39 +85,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         ai_provider TEXT,
         ai_model TEXT,
 
-        dismissed INTEGER DEFAULT 0,
-        bookmarked INTEGER DEFAULT 0,
-        opened INTEGER DEFAULT 0,
-        dismissed_at TEXT,
-        bookmarked_at TEXT,
-        opened_at TEXT
+        bookmarked_at TEXT NOT NULL,
+        cluster_title TEXT,
+        cluster_summary TEXT
       );
 
-      CREATE INDEX IF NOT EXISTS idx_items_feed
-        ON items(dismissed, ai_score DESC, published_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_items_url ON items(url);
-      CREATE INDEX IF NOT EXISTS idx_items_platform ON items(platform);
-
-      CREATE TABLE IF NOT EXISTS scan_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        started_at TEXT NOT NULL,
-        completed_at TEXT,
-        items_found INTEGER DEFAULT 0,
-        new_items INTEGER DEFAULT 0,
-        items_scored INTEGER DEFAULT 0,
-        errors TEXT,
-        status TEXT DEFAULT 'running'
-      );
-
-      CREATE TABLE IF NOT EXISTS source_status (
-        source_key TEXT PRIMARY KEY,
-        platform TEXT NOT NULL,
-        last_success_at TEXT,
-        last_error_at TEXT,
-        last_error_message TEXT,
-        consecutive_failures INTEGER DEFAULT 0,
-        total_items_fetched INTEGER DEFAULT 0
-      );
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_url ON bookmarks(url);
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_score ON bookmarks(ai_score DESC);
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_platform ON bookmarks(platform);
     `);
   }
 }

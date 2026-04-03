@@ -3,6 +3,9 @@ import { AIProviderService } from './ai-provider.service';
 import { PreFilterService } from './pre-filter.service';
 import { ScoringPromptService } from './scoring-prompt.service';
 import { ScoringService } from './scoring.service';
+import { ClusteringPromptService } from './clustering-prompt.service';
+import { ClusteringService } from './clustering.service';
+import { ExpansionPromptService } from './expansion-prompt.service';
 
 @Module({
   providers: [
@@ -10,7 +13,10 @@ import { ScoringService } from './scoring.service';
     PreFilterService,
     ScoringPromptService,
     ScoringService,
+    ClusteringPromptService,
+    ClusteringService,
+    ExpansionPromptService,
   ],
-  exports: [ScoringService, AIProviderService, PreFilterService],
+  exports: [ScoringService, ClusteringService, AIProviderService, PreFilterService, ExpansionPromptService],
 })
 export class ScoringModule {}

@@ -26,14 +26,33 @@
   display: flex;
   align-items: center;
   gap: $spacing-3;
-  padding: $spacing-3;
+  padding: $spacing-2-5 $spacing-3;
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
+.view-info {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-2;
+  flex-shrink: 0;
+}
+
+.view-label {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.view-count {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .search-input {
   flex: 1;
-  padding: $spacing-2 $spacing-3;
+  padding: $spacing-1-5 $spacing-3;
   border: 1px solid var(--border-default);
   border-radius: $radius-md;
   background: var(--input-bg);
@@ -52,10 +71,163 @@
   }
 }
 
-.feed-count {
+// Custom instructions panel
+.instructions-toggle {
+  display: flex;
+  padding: $spacing-1 $spacing-3;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.instructions-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: $font-size-xs;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.instructions-panel {
+  padding: $spacing-2 $spacing-3;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.instructions-textarea {
+  width: 100%;
+  padding: $spacing-2;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--focus-ring);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.instructions-hint {
+  margin-top: $spacing-1;
   font-size: $font-size-xs;
   color: var(--text-muted);
-  white-space: nowrap;
+}
+
+// Activity panel for scan/curate progress
+.activity-panel {
+  padding: $spacing-2-5 $spacing-3;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  margin-bottom: $spacing-1-5;
+}
+
+.activity-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.activity-title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.activity-detail {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  margin-bottom: $spacing-1-5;
+  font-size: $font-size-xs;
+}
+
+.activity-source {
+  font-weight: $font-weight-medium;
+  color: var(--text-primary);
+}
+
+.activity-status {
+  color: var(--text-muted);
+
+  &.error {
+    color: #e74c3c;
+  }
+}
+
+.activity-progress {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.progress-bar {
+  height: 3px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+// Curate result banner
+.curate-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-2 $spacing-3;
+  background: var(--accent-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: $font-size-sm;
+  color: var(--text-primary);
+  flex-shrink: 0;
+
+  &.empty {
+    color: var(--text-muted);
+  }
+}
+
+.banner-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 $spacing-1;
+
+  &:hover {
+    color: var(--text-primary);
+  }
 }
 
 .feed-list {

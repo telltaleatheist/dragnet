@@ -25,14 +25,14 @@ export class AIProviderService {
   private anthropic: Anthropic | null = null;
   private openai: OpenAI | null = null;
 
-  async generateText(prompt: string, config: AIProviderConfig): Promise<AIResponse> {
+  async generateText(prompt: string, config: AIProviderConfig, maxTokens = 4096): Promise<AIResponse> {
     switch (config.provider) {
       case 'claude':
-        return this.generateWithClaude(prompt, config);
+        return this.generateWithClaude(prompt, config, maxTokens);
       case 'openai':
-        return this.generateWithOpenAI(prompt, config);
+        return this.generateWithOpenAI(prompt, config, maxTokens);
       case 'ollama':
-        return this.generateWithOllama(prompt, config);
+        return this.generateWithOllama(prompt, config, maxTokens);
       default:
         throw new Error(`Unsupported AI provider: ${config.provider}`);
     }
@@ -47,7 +47,7 @@ export class AIProviderService {
     }
   }
 
-  private async generateWithClaude(prompt: string, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithClaude(prompt: string, config: AIProviderConfig, maxTokens: number): Promise<AIResponse> {
     if (!config.apiKey) throw new Error('Claude API key is required');
 
     if (!this.anthropic || this.anthropic.apiKey !== config.apiKey) {
@@ -56,7 +56,7 @@ export class AIProviderService {
 
     const message = await this.anthropic.messages.create({
       model: config.model,
-      max_tokens: 4096,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -77,7 +77,7 @@ export class AIProviderService {
     };
   }
 
-  private async generateWithOpenAI(prompt: string, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithOpenAI(prompt: string, config: AIProviderConfig, maxTokens: number): Promise<AIResponse> {
     if (!config.apiKey) throw new Error('OpenAI API key is required');
 
     if (!this.openai || this.openai.apiKey !== config.apiKey) {
@@ -87,7 +87,7 @@ export class AIProviderService {
     const completion = await this.openai.chat.completions.create({
       model: config.model,
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 4096,
+      max_tokens: maxTokens,
     });
 
     const text = completion.choices[0]?.message?.content || '';
@@ -106,7 +106,7 @@ export class AIProviderService {
     };
   }
 
-  private async generateWithOllama(prompt: string, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithOllama(prompt: string, config: AIProviderConfig, maxTokens: number): Promise<AIResponse> {
     const endpoint = config.ollamaEndpoint || 'http://localhost:11434';
 
     // Pre-check: is Ollama reachable?
@@ -119,7 +119,7 @@ export class AIProviderService {
 
     // Dynamic context window based on prompt size
     const estimatedTokens = Math.ceil(prompt.length / 4);
-    const numCtx = Math.min(Math.ceil((estimatedTokens + 4096) / 4096) * 4096, 131072);
+    const numCtx = Math.min(Math.ceil((estimatedTokens + maxTokens) / 4096) * 4096, 131072);
 
     this.logger.log(`Ollama: requesting ${config.model} (num_ctx: ${numCtx}, prompt ~${estimatedTokens} tokens)...`);
 

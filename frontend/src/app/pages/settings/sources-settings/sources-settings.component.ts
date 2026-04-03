@@ -35,6 +35,8 @@ export class SourcesSettingsComponent implements OnChanges {
   webRssEnabled = signal(true);
   redditSearchEnabled = signal(true);
   googleNewsEnabled = signal(true);
+  tiktokDiscoveryEnabled = signal(false);
+  instagramDiscoveryEnabled = signal(false);
 
   // Source lists
   twitterAccounts = signal<string[]>([]);
@@ -78,6 +80,8 @@ export class SourcesSettingsComponent implements OnChanges {
       this.rssFeeds.set(s.webRss.feeds.map(f => ({ ...f })));
       this.redditSearchEnabled.set(s.redditSearch?.enabled ?? true);
       this.googleNewsEnabled.set(s.googleNews?.enabled ?? true);
+      this.tiktokDiscoveryEnabled.set(s.tiktokDiscovery?.enabled ?? false);
+      this.instagramDiscoveryEnabled.set(s.instagramDiscovery?.enabled ?? false);
     }
   }
 
@@ -201,6 +205,12 @@ export class SourcesSettingsComponent implements OnChanges {
       },
       googleNews: {
         enabled: this.googleNewsEnabled(),
+      },
+      tiktokDiscovery: {
+        enabled: this.tiktokDiscoveryEnabled(),
+      },
+      instagramDiscovery: {
+        enabled: this.instagramDiscoveryEnabled(),
       },
     };
 

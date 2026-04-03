@@ -123,6 +123,8 @@ export interface SourcesConfig {
   webRss: WebRssSourceConfig;
   redditSearch: DiscoverySourceConfig;
   googleNews: DiscoverySourceConfig;
+  tiktokDiscovery: DiscoverySourceConfig;
+  instagramDiscovery: DiscoverySourceConfig;
 }
 
 export interface DiscoverySourceConfig {
@@ -176,6 +178,7 @@ export interface ScoringConfig {
   claudeApiKey?: string;
   openaiApiKey?: string;
   batchSize: number;
+  editorialNotes?: string;
   weights: ScoringWeights;
 }
 
@@ -211,6 +214,22 @@ export interface AppSettings {
   minScoreToShow: number;
 }
 
+// === Story Clusters ===
+
+export interface StoryCluster {
+  id: string;
+  title: string;
+  summary: string;
+  score: number;
+  subjects: string[];
+  itemIds: string[];
+  createdAt: string;
+}
+
+export interface CuratedResponse {
+  clusters: StoryCluster[];
+}
+
 // === WebSocket Events ===
 
 export interface ScanStartedEvent {
@@ -231,6 +250,20 @@ export interface ScanScoringEvent {
   batch: number;
   totalBatches: number;
   itemsScored: number;
+}
+
+export interface ClusteringProgressEvent {
+  phase: 'scoring' | 'clustering' | 'expanding';
+  batch?: number;
+  totalBatches?: number;
+  itemsProcessed: number;
+  totalItems: number;
+}
+
+export interface CurateCompleteEvent {
+  itemsScored: number;
+  clustersCreated: number;
+  duration: number;
 }
 
 export interface ScanCompleteEvent {

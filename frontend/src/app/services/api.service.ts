@@ -5,10 +5,11 @@ import { io, Socket } from 'socket.io-client';
 import {
   FeedResponse,
   FeedFilters,
-  ScanStatus,
+  CuratedResponse,
+  ClusteringProgressEvent,
+  CurateCompleteEvent,
   ScanProgressEvent,
   ScanCompleteEvent,
-  SourceStatusRecord,
 } from '../models/feed.model';
 
 @Injectable({ providedIn: 'root' })
@@ -18,13 +19,13 @@ export class ApiService implements OnDestroy {
   private initialized = false;
 
   // WebSocket event subjects
-  readonly scanStarted$ = new Subject<{ scanId: number; timestamp: string }>();
+  readonly scanStarted$ = new Subject<{ scanId: string; timestamp: string }>();
   readonly scanProgress$ = new Subject<ScanProgressEvent>();
   readonly scanComplete$ = new Subject<ScanCompleteEvent>();
   readonly scanError$ = new Subject<{ source?: string; error: string }>();
-  readonly scanScoring$ = new Subject<{ batch: number; totalBatches: number; itemsScored: number }>();
   readonly curateStarted$ = new Subject<{ timestamp: string }>();
-  readonly curateComplete$ = new Subject<{ itemsScored: number; duration: number }>();
+  readonly clusteringProgress$ = new Subject<ClusteringProgressEvent>();
+  readonly curateComplete$ = new Subject<CurateCompleteEvent>();
   readonly feedUpdated$ = new Subject<void>();
 
   constructor(private http: HttpClient) {
@@ -36,7 +37,6 @@ export class ApiService implements OnDestroy {
   }
 
   private async init() {
-    // Resolve backend URL — try Electron IPC first, then same-origin
     try {
       const electronApi = (window as any).electron;
       if (electronApi?.getBackendUrl) {
@@ -49,7 +49,6 @@ export class ApiService implements OnDestroy {
       // Not in Electron
     }
 
-    // Fallback: derive from current page URL (frontend is served by NestJS)
     if (!this.baseUrl) {
       this.baseUrl = `${window.location.origin}/api`;
     }
@@ -59,9 +58,9 @@ export class ApiService implements OnDestroy {
     this.initialized = true;
   }
 
-  // --- Feed ---
+  // --- Feed: All Items ---
 
-  getFeed(filters: Partial<FeedFilters> = {}): Observable<FeedResponse> {
+  getItems(filters: Partial<FeedFilters> = {}): Observable<FeedResponse> {
     let params = new HttpParams();
     if (filters.page) params = params.set('page', filters.page.toString());
     if (filters.limit) params = params.set('limit', filters.limit.toString());
@@ -69,12 +68,30 @@ export class ApiService implements OnDestroy {
     if (filters.platform) params = params.set('platform', filters.platform);
     if (filters.tag) params = params.set('tag', filters.tag);
     if (filters.contentType) params = params.set('contentType', filters.contentType);
-    if (filters.bookmarked) params = params.set('bookmarked', 'true');
-    if (filters.dismissed) params = params.set('dismissed', 'true');
     if (filters.search) params = params.set('search', filters.search);
 
-    return this.http.get<FeedResponse>(`${this.baseUrl}/feed`, { params });
+    return this.http.get<FeedResponse>(`${this.baseUrl}/feed/items`, { params });
   }
+
+  // --- Feed: Curated ---
+
+  getCurated(): Observable<CuratedResponse> {
+    return this.http.get<CuratedResponse>(`${this.baseUrl}/feed/curated`);
+  }
+
+  // --- Feed: Bookmarks ---
+
+  getBookmarks(filters: Partial<FeedFilters> = {}): Observable<FeedResponse> {
+    let params = new HttpParams();
+    if (filters.page) params = params.set('page', filters.page.toString());
+    if (filters.limit) params = params.set('limit', filters.limit.toString());
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.platform) params = params.set('platform', filters.platform);
+
+    return this.http.get<FeedResponse>(`${this.baseUrl}/feed/bookmarks`, { params });
+  }
+
+  // --- Feed: Actions ---
 
   dismissItem(id: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/feed/${id}/dismiss`, {});
@@ -88,32 +105,31 @@ export class ApiService implements OnDestroy {
     return this.http.post(`${this.baseUrl}/feed/${id}/unbookmark`, {});
   }
 
+  bookmarkCluster(id: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/feed/cluster/${id}/bookmark`, {});
+  }
+
   markOpened(id: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/feed/${id}/open`, {});
   }
 
-  getFeedStats(): Observable<{ totalItems: number }> {
-    return this.http.get<{ totalItems: number }>(`${this.baseUrl}/feed/stats`);
+  getFeedStats(): Observable<{ totalItems: number; bookmarkCount: number }> {
+    return this.http.get<{ totalItems: number; bookmarkCount: number }>(`${this.baseUrl}/feed/stats`);
   }
 
   // --- Scan ---
 
-  triggerScan(): Observable<{ scanId: number }> {
-    return this.http.post<{ scanId: number }>(`${this.baseUrl}/scan/trigger`, {});
+  triggerScan(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/scan/trigger`, {});
   }
 
-  triggerCurate(): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.baseUrl}/scan/curate`, {});
+  triggerCurate(customInstructions?: string): Observable<{ message: string }> {
+    const body = customInstructions ? { customInstructions } : {};
+    return this.http.post<{ message: string }>(`${this.baseUrl}/scan/curate`, body);
   }
 
-  getScanStatus(): Observable<ScanStatus> {
-    return this.http.get<ScanStatus>(`${this.baseUrl}/scan/status`);
-  }
-
-  // --- Sources ---
-
-  getSourceStatuses(): Observable<SourceStatusRecord[]> {
-    return this.http.get<SourceStatusRecord[]>(`${this.baseUrl}/feed/sources`);
+  getScanStatus(): Observable<{ scanning: boolean; curating: boolean }> {
+    return this.http.get<{ scanning: boolean; curating: boolean }>(`${this.baseUrl}/scan/status`);
   }
 
   // --- Config ---
@@ -162,10 +178,10 @@ export class ApiService implements OnDestroy {
 
     this.socket.on('scan:started', (data) => this.scanStarted$.next(data));
     this.socket.on('scan:progress', (data) => this.scanProgress$.next(data));
-    this.socket.on('scan:scoring', (data) => this.scanScoring$.next(data));
     this.socket.on('scan:complete', (data) => this.scanComplete$.next(data));
     this.socket.on('scan:error', (data) => this.scanError$.next(data));
     this.socket.on('curate:started', (data) => this.curateStarted$.next(data));
+    this.socket.on('curate:clustering', (data) => this.clusteringProgress$.next(data));
     this.socket.on('curate:complete', (data) => this.curateComplete$.next(data));
     this.socket.on('feed:updated', () => this.feedUpdated$.next());
 

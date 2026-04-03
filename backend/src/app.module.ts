@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { environment } from './config/environment';
 import { DatabaseModule } from './database/database.module';
+import { StoreModule } from './store/store.module';
 import { DragnetConfigModule } from './config/dragnet-config.module';
 import { ScrapingModule } from './scraping/scraping.module';
 import { FeedModule } from './feed/feed.module';
@@ -22,6 +23,7 @@ import { ScoringModule } from './scoring/scoring.module';
       global: true,
     }),
     DatabaseModule,
+    StoreModule,
     DragnetConfigModule,
     ScrapingModule,
     ScoringModule,

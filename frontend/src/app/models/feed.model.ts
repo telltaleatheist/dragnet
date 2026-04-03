@@ -44,30 +44,32 @@ export interface FeedFilters {
   search?: string;
 }
 
-export interface ScanStatus {
-  running: boolean;
-  lastScan: ScanRecord | null;
+export interface StoryCluster {
+  id: string;
+  title: string;
+  summary: string;
+  score: number;
+  subjects: string[];
+  items: FeedItem[];
+  createdAt: string;
 }
 
-export interface ScanRecord {
-  id: number;
-  started_at: string;
-  completed_at: string | null;
-  items_found: number;
-  new_items: number;
-  items_scored: number;
-  errors: string | null;
-  status: string;
+export interface CuratedResponse {
+  clusters: StoryCluster[];
 }
 
-export interface SourceStatusRecord {
-  source_key: string;
-  platform: string;
-  last_success_at: string | null;
-  last_error_at: string | null;
-  last_error_message: string | null;
-  consecutive_failures: number;
-  total_items_fetched: number;
+export interface ClusteringProgressEvent {
+  phase: 'scoring' | 'clustering' | 'expanding';
+  batch?: number;
+  totalBatches?: number;
+  itemsProcessed: number;
+  totalItems: number;
+}
+
+export interface CurateCompleteEvent {
+  itemsScored: number;
+  clustersCreated: number;
+  duration: number;
 }
 
 export interface ScanProgressEvent {

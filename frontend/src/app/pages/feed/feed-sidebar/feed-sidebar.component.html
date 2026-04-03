@@ -2,50 +2,14 @@
   <!-- Views -->
   <div class="sidebar-section">
     <div class="section-title">Views</div>
-    @for (option of views; track option.label) {
+    @for (view of views; track view.value) {
       <button
         class="sidebar-item"
-        [class.active]="store.activeView() === option.value"
-        (click)="setView(option)"
+        [class.active]="store.activeView() === view.value"
+        (click)="setView(view)"
       >
-        @if (option.icon) {
-          <span class="sidebar-icon">{{ option.icon }}</span>
-        }
-        <span>{{ option.label }}</span>
-      </button>
-    }
-  </div>
-
-  <!-- Platforms -->
-  <div class="sidebar-section">
-    <div class="section-title">Platforms</div>
-    @for (option of platforms; track option.label) {
-      <button
-        class="sidebar-item"
-        [class.active]="activePlatform === option.value"
-        (click)="setPlatform(option)"
-      >
-        @if (option.icon) {
-          <span class="sidebar-icon">{{ option.icon }}</span>
-        }
-        <span>{{ option.label }}</span>
-      </button>
-    }
-  </div>
-
-  <!-- Content Type -->
-  <div class="sidebar-section">
-    <div class="section-title">Content Type</div>
-    @for (option of contentTypes; track option.label) {
-      <button
-        class="sidebar-item"
-        [class.active]="activeContentType === option.value"
-        (click)="setContentType(option)"
-      >
-        @if (option.icon) {
-          <span class="sidebar-icon">{{ option.icon }}</span>
-        }
-        <span>{{ option.label }}</span>
+        <span class="sidebar-icon" [innerHTML]="view.icon"></span>
+        <span>{{ view.label }}</span>
       </button>
     }
   </div>

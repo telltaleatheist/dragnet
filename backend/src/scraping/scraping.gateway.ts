@@ -15,7 +15,7 @@ export class ScrapingGateway {
   @WebSocketServer()
   server!: Server;
 
-  emitScanStarted(data: { scanId: number; timestamp: string }) {
+  emitScanStarted(data: { scanId: string; timestamp: string }) {
     this.server.emit('scan:started', data);
   }
 
@@ -30,28 +30,9 @@ export class ScrapingGateway {
     this.server.emit('scan:progress', data);
   }
 
-  emitScanSourceComplete(data: {
-    source: string;
-    platform: string;
-    itemsFound: number;
-    errors?: string;
-  }) {
-    this.server.emit('scan:source-complete', data);
-  }
-
-  emitScanScoring(data: {
-    batch: number;
-    totalBatches: number;
-    itemsScored: number;
-  }) {
-    this.server.emit('scan:scoring', data);
-  }
-
   emitScanComplete(data: {
-    scanId: number;
     itemsFound: number;
     newItems: number;
-    itemsScored: number;
     errors: any[];
     duration: number;
   }) {
@@ -66,7 +47,17 @@ export class ScrapingGateway {
     this.server.emit('curate:started', data);
   }
 
-  emitCurateComplete(data: { itemsScored: number; duration: number }) {
+  emitClusteringProgress(data: {
+    phase: 'scoring' | 'clustering' | 'expanding';
+    batch?: number;
+    totalBatches?: number;
+    itemsProcessed: number;
+    totalItems: number;
+  }) {
+    this.server.emit('curate:clustering', data);
+  }
+
+  emitCurateComplete(data: { itemsScored: number; clustersCreated: number; duration: number }) {
     this.server.emit('curate:complete', data);
   }
 

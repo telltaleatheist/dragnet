@@ -1,22 +1,16 @@
 import { Module, Global } from '@nestjs/common';
 import { DatabaseService } from './database.service';
-import { ItemsService } from './items.service';
-import { ScanHistoryService } from './scan-history.service';
-import { SourceStatusService } from './source-status.service';
+import { BookmarksService } from './bookmarks.service';
 
 @Global()
 @Module({
   providers: [
     DatabaseService,
-    ItemsService,
-    ScanHistoryService,
-    SourceStatusService,
+    BookmarksService,
   ],
   exports: [
     DatabaseService,
-    ItemsService,
-    ScanHistoryService,
-    SourceStatusService,
+    BookmarksService,
   ],
 })
 export class DatabaseModule {}

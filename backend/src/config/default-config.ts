@@ -40,6 +40,13 @@ export const DEFAULT_CONFIG: DragnetConfig = {
         'PublicFreakout',
         'Qult_Headquarters',
         'ParlerWatch',
+        'politics',
+        'WhitePeopleTwitter',
+        'news',
+        'worldnews',
+        'LeopardsAteMyFace',
+        'SelfAwarewolves',
+        'PoliticalHumor',
       ],
       feedTypes: ['hot', 'top'],
       topTimeframe: 'week',
@@ -86,12 +93,17 @@ export const DEFAULT_CONFIG: DragnetConfig = {
     },
     redditSearch: { enabled: true },
     googleNews: { enabled: true },
+    tiktokDiscovery: { enabled: true },
+    instagramDiscovery: { enabled: true },
   },
   scoring: {
     aiProvider: 'ollama',
     aiModel: 'cogito:70b',
     ollamaEndpoint: 'http://localhost:11434',
     batchSize: 5,
+    editorialNotes: `JW/WATCHTOWER AUTO-BOOST: Any item mentioning Jehovah's Witnesses, Watchtower, governing body, disfellowshipping, shunning, kingdom hall, PIMO, or Bethel MUST receive a minimum score of 7. This is non-negotiable.
+CHRISTIAN NATIONALISM PRIORITY: Mask-off moments from pastors, politicians, or media figures pushing theocracy should score high.
+PROPHECY GRIFT: Failed predictions, seed-faith scams, and prosperity gospel hustles are always relevant.`,
     weights: {
       videoBoost: 2.0,
       figureBoosts: {

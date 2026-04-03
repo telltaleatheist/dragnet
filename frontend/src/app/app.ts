@@ -54,21 +54,31 @@ export class App implements OnInit {
   ];
 
   statusCenterText = computed(() => {
-    const scoring = this.feedStore.scoringProgress();
-    if (scoring) {
-      return `Scoring batch ${scoring.batch}/${scoring.totalBatches}...`;
+    const progress = this.feedStore.curateProgress();
+    if (progress) {
+      if (progress.phase === 'scoring') {
+        return progress.batch
+          ? `AI scoring: batch ${progress.batch}/${progress.totalBatches} (${progress.itemsProcessed} scored)`
+          : `AI scoring: ${progress.itemsProcessed}/${progress.totalItems} items`;
+      }
+      return `Clustering: ${progress.itemsProcessed}/${progress.totalItems} items`;
     }
     if (this.feedStore.curateRunning()) {
-      return 'Curating...';
+      return 'Curating: pre-filtering items...';
     }
     if (this.feedStore.scanRunning()) {
-      const progress = this.feedStore.scanProgress();
-      if (progress) {
-        return `Scanning ${progress.source} (${progress.current}/${progress.total})...`;
+      const scanProg = this.feedStore.scanProgress();
+      if (scanProg) {
+        const status = scanProg.status === 'fetching'
+          ? 'fetching'
+          : scanProg.status === 'complete'
+            ? `${scanProg.itemsFound} found`
+            : 'error';
+        return `Scanning: ${scanProg.source} — ${status} (${scanProg.current}/${scanProg.total})`;
       }
-      return 'Scanning...';
+      return 'Scanning: starting...';
     }
-    return 'Ready';
+    return '';
   });
 
   ngOnInit() {

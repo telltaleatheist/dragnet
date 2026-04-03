@@ -1,12 +1,15 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { FeedItem, FeedFilters, ScanProgressEvent } from '../models/feed.model';
+import {
+  FeedItem,
+  FeedFilters,
+  ScanProgressEvent,
+  StoryCluster,
+  ClusteringProgressEvent,
+  CurateCompleteEvent,
+} from '../models/feed.model';
 
-interface ScoringProgress {
-  batch: number;
-  totalBatches: number;
-  itemsScored: number;
-}
+export type ActiveView = 'all' | 'curated' | 'bookmarked';
 
 @Injectable({ providedIn: 'root' })
 export class FeedStoreService {
@@ -19,10 +22,13 @@ export class FeedStoreService {
   readonly scanRunning = signal(false);
   readonly scanProgress = signal<ScanProgressEvent | null>(null);
   readonly curateRunning = signal(false);
-  readonly scoringProgress = signal<ScoringProgress | null>(null);
+  readonly curateProgress = signal<ClusteringProgressEvent | null>(null);
   readonly lastScanTime = signal<string | null>(null);
+  readonly lastCurateResult = signal<CurateCompleteEvent | null>(null);
 
-  readonly activeView = signal<string | undefined>(undefined);
+  readonly activeView = signal<ActiveView>('all');
+  readonly clusters = signal<StoryCluster[]>([]);
+  readonly customInstructions = signal('');
 
   readonly filters = signal<FeedFilters>({
     page: 1,
@@ -39,9 +45,7 @@ export class FeedStoreService {
   );
 
   constructor() {
-    // Subscribe to WebSocket events
     this.api.scanStarted$.subscribe(() => {
-      this.scanRunning.set(true);
       this.scanProgress.set(null);
     });
 
@@ -49,16 +53,13 @@ export class FeedStoreService {
       this.scanProgress.set(event);
     });
 
-    this.api.scanComplete$.subscribe((event) => {
+    this.api.scanComplete$.subscribe(() => {
       this.scanRunning.set(false);
       this.scanProgress.set(null);
-      this.scoringProgress.set(null);
       this.lastScanTime.set(new Date().toLocaleTimeString());
-      this.loadFeed();
-    });
-
-    this.api.scanScoring$.subscribe((event) => {
-      this.scoringProgress.set(event);
+      if (this.activeView() === 'all') {
+        this.loadItems();
+      }
     });
 
     this.api.scanError$.subscribe(() => {
@@ -66,35 +67,90 @@ export class FeedStoreService {
     });
 
     this.api.curateStarted$.subscribe(() => {
-      this.curateRunning.set(true);
-      this.scoringProgress.set(null);
+      this.curateProgress.set(null);
     });
 
-    this.api.curateComplete$.subscribe(() => {
+    this.api.clusteringProgress$.subscribe((event) => {
+      this.curateProgress.set(event);
+    });
+
+    this.api.curateComplete$.subscribe((event) => {
       this.curateRunning.set(false);
-      this.scoringProgress.set(null);
-      this.switchToCurated();
+      this.curateProgress.set(null);
+      this.lastCurateResult.set(event);
+      this.switchView('curated');
     });
 
     this.api.feedUpdated$.subscribe(() => {
-      this.loadFeed();
+      if (this.activeView() === 'all') {
+        this.loadItems();
+      }
     });
 
     // Initial load
-    this.loadFeed();
+    this.loadItems();
     this.loadScanStatus();
   }
 
-  loadFeed() {
+  switchView(view: ActiveView) {
+    this.activeView.set(view);
+    this.filters.update((f) => ({ ...f, page: 1, search: undefined }));
+    switch (view) {
+      case 'all':
+        this.loadItems();
+        break;
+      case 'curated':
+        this.loadCurated();
+        break;
+      case 'bookmarked':
+        this.loadBookmarks();
+        break;
+    }
+  }
+
+  loadItems() {
     this.loading.set(true);
-    this.api.getFeed(this.filters()).subscribe({
+    this.api.getItems(this.filters()).subscribe({
       next: (response) => {
         this.items.set(response.items);
         this.totalItems.set(response.total);
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Failed to load feed:', err);
+        console.error('Failed to load items:', err);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  loadCurated() {
+    this.loading.set(true);
+    this.api.getCurated().subscribe({
+      next: (response) => {
+        this.clusters.set(response.clusters);
+        // Also set flat items for total count
+        const allItems = response.clusters.flatMap((c) => c.items);
+        this.items.set(allItems);
+        this.totalItems.set(allItems.length);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load curated:', err);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  loadBookmarks() {
+    this.loading.set(true);
+    this.api.getBookmarks(this.filters()).subscribe({
+      next: (response) => {
+        this.items.set(response.items);
+        this.totalItems.set(response.total);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load bookmarks:', err);
         this.loading.set(false);
       },
     });
@@ -103,12 +159,7 @@ export class FeedStoreService {
   loadScanStatus() {
     this.api.getScanStatus().subscribe({
       next: (status) => {
-        this.scanRunning.set(status.running);
-        if (status.lastScan?.completed_at) {
-          this.lastScanTime.set(
-            new Date(status.lastScan.completed_at).toLocaleTimeString(),
-          );
-        }
+        this.scanRunning.set(status.scanning);
       },
       error: () => {},
     });
@@ -116,48 +167,53 @@ export class FeedStoreService {
 
   triggerScan() {
     if (this.scanRunning() || this.curateRunning()) return;
+    this.scanRunning.set(true);
     this.api.triggerScan().subscribe({
-      next: () => {
-        this.scanRunning.set(true);
+      error: (err) => {
+        this.scanRunning.set(false);
+        console.error('Failed to trigger scan:', err);
       },
-      error: (err) => console.error('Failed to trigger scan:', err),
     });
   }
 
   triggerCurate() {
     if (this.scanRunning() || this.curateRunning()) return;
-    this.api.triggerCurate().subscribe({
-      next: () => {
-        this.curateRunning.set(true);
+    this.curateRunning.set(true);
+    this.lastCurateResult.set(null);
+    const instructions = this.customInstructions().trim() || undefined;
+    this.api.triggerCurate(instructions).subscribe({
+      error: (err) => {
+        this.curateRunning.set(false);
+        console.error('Failed to trigger curation:', err);
       },
-      error: (err) => console.error('Failed to trigger curation:', err),
     });
-  }
-
-  switchToCurated() {
-    this.activeView.set('curated');
-    this.updateFilters({ minScore: 1, bookmarked: false, dismissed: false });
   }
 
   updateFilters(partial: Partial<FeedFilters>) {
     this.filters.update((current) => ({
       ...current,
       ...partial,
-      page: partial.page ?? 1, // Reset to page 1 on filter change unless explicit
+      page: partial.page ?? 1,
     }));
-    this.loadFeed();
+    const view = this.activeView();
+    if (view === 'all') this.loadItems();
+    else if (view === 'bookmarked') this.loadBookmarks();
   }
 
   nextPage() {
     if (!this.hasMore()) return;
     this.filters.update((f) => ({ ...f, page: f.page + 1 }));
-    this.loadFeed();
+    const view = this.activeView();
+    if (view === 'all') this.loadItems();
+    else if (view === 'bookmarked') this.loadBookmarks();
   }
 
   prevPage() {
     if (this.filters().page <= 1) return;
     this.filters.update((f) => ({ ...f, page: f.page - 1 }));
-    this.loadFeed();
+    const view = this.activeView();
+    if (view === 'all') this.loadItems();
+    else if (view === 'bookmarked') this.loadBookmarks();
   }
 
   dismissItem(id: string) {
@@ -177,8 +233,24 @@ export class FeedStoreService {
 
   unbookmarkItem(id: string) {
     this.api.unbookmarkItem(id).subscribe(() => {
-      this.items.update((items) =>
-        items.map((i) => (i.id === id ? { ...i, bookmarked: false } : i)),
+      if (this.activeView() === 'bookmarked') {
+        this.items.update((items) => items.filter((i) => i.id !== id));
+        this.totalItems.update((n) => n - 1);
+      } else {
+        this.items.update((items) =>
+          items.map((i) => (i.id === id ? { ...i, bookmarked: false } : i)),
+        );
+      }
+    });
+  }
+
+  bookmarkCluster(clusterId: string) {
+    this.api.bookmarkCluster(clusterId).subscribe(() => {
+      this.clusters.update((clusters) =>
+        clusters.map((c) => {
+          if (c.id !== clusterId) return c;
+          return { ...c, items: c.items.map((i) => ({ ...i, bookmarked: true })) };
+        }),
       );
     });
   }
@@ -189,7 +261,6 @@ export class FeedStoreService {
       items.map((i) => (i.id === item.id ? { ...i, opened: true } : i)),
     );
 
-    // Open in external browser
     try {
       const electronApi = (window as any).electron;
       if (electronApi?.openExternal) {

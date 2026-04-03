@@ -119,7 +119,9 @@ export class DragnetConfigService implements OnModuleInit {
 
   private mergeWithDefaults(loaded: Partial<DragnetConfig>): DragnetConfig {
     return {
-      sources: loaded.sources ?? DEFAULT_CONFIG.sources,
+      sources: loaded.sources
+        ? { ...DEFAULT_CONFIG.sources, ...loaded.sources }
+        : DEFAULT_CONFIG.sources,
       scoring: { ...DEFAULT_CONFIG.scoring, ...loaded.scoring },
       subjects: loaded.subjects ?? DEFAULT_CONFIG.subjects,
       figures: loaded.figures ?? DEFAULT_CONFIG.figures,

@@ -7,68 +7,180 @@
 
     <!-- Main Feed -->
     <div pane-secondary class="feed-main">
-      <!-- Search bar -->
+      <!-- Header with view label + search -->
       <div class="feed-header">
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Search items..."
-          [ngModel]="store.filters().search || ''"
-          (ngModelChange)="store.updateFilters({ search: $event || undefined })"
-        />
-        <span class="feed-count">{{ store.totalItems() }} items</span>
-      </div>
-
-      <!-- Loading state -->
-      @if (store.loading() && store.items().length === 0) {
-        <div class="feed-empty">
-          <div class="empty-icon">&#x23F3;</div>
-          <p>Loading...</p>
+        <div class="view-info">
+          <span class="view-label">{{ viewLabel() }}</span>
+          @if (store.activeView() === 'curated') {
+            <span class="view-count">{{ store.clusters().length }} stories, {{ store.totalItems() }} items</span>
+          } @else {
+            <span class="view-count">{{ store.totalItems() }} items</span>
+          }
         </div>
-      }
-
-      <!-- Empty state -->
-      @if (!store.loading() && store.items().length === 0) {
-        <div class="feed-empty">
-          <div class="empty-icon">&#x1F4E1;</div>
-          <h3>No items yet</h3>
-          <p>Click "Scan Now" in the toolbar to fetch content from your sources.</p>
-        </div>
-      }
-
-      <!-- Item list -->
-      <div class="feed-list">
-        @for (item of store.items(); track item.id) {
-          <app-feed-item
-            [item]="item"
-            (dismiss)="onDismiss(item)"
-            (bookmark)="onBookmark(item)"
-            (open)="onOpen(item)"
+        @if (store.activeView() !== 'curated') {
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search items..."
+            [ngModel]="store.filters().search || ''"
+            (ngModelChange)="store.updateFilters({ search: $event || undefined })"
           />
         }
       </div>
 
-      <!-- Pagination -->
-      @if (store.totalPages() > 1) {
-        <div class="feed-pagination">
-          <button
-            class="page-btn"
-            [disabled]="store.filters().page <= 1"
-            (click)="store.prevPage()"
-          >
-            Previous
-          </button>
-          <span class="page-info">
-            Page {{ store.filters().page }} of {{ store.totalPages() }}
-          </span>
-          <button
-            class="page-btn"
-            [disabled]="!store.hasMore()"
-            (click)="store.nextPage()"
-          >
-            Next
+      <!-- Custom Instructions (collapsed by default) -->
+      @if ((store.activeView() === 'curated' || store.activeView() === 'all') && !store.curateRunning()) {
+        <div class="instructions-toggle">
+          <button class="instructions-toggle-btn" (click)="showInstructions = !showInstructions">
+            {{ showInstructions ? 'Hide' : 'Custom Instructions' }}
           </button>
         </div>
+        @if (showInstructions) {
+          <div class="instructions-panel">
+            <textarea
+              class="instructions-textarea"
+              placeholder="Add custom scoring instructions for the next curate run (e.g. boost rules, topic priorities)..."
+              [ngModel]="store.customInstructions()"
+              (ngModelChange)="store.customInstructions.set($event)"
+              rows="4"
+            ></textarea>
+            <div class="instructions-hint">Overrides default editorial notes for this curate run. Leave blank to use config defaults.</div>
+          </div>
+        }
+      }
+
+      <!-- Activity panel (scan/curate progress) -->
+      @if (store.scanRunning() || store.curateRunning()) {
+        <div class="activity-panel">
+          @if (store.scanRunning()) {
+            <div class="activity-header">
+              <span class="activity-spinner"></span>
+              <span class="activity-title">Scanning sources...</span>
+            </div>
+            @if (store.scanProgress(); as progress) {
+              <div class="activity-detail">
+                <span class="activity-source">{{ progress.source }}</span>
+                <span class="activity-status" [class.error]="progress.status === 'error'">
+                  {{ progress.status === 'fetching' ? 'fetching...' : progress.status === 'complete' ? progress.itemsFound + ' found' : 'error' }}
+                </span>
+                <span class="activity-progress">{{ progress.current }} / {{ progress.total }}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="(progress.current / progress.total) * 100"></div>
+              </div>
+            }
+          }
+          @if (store.curateRunning()) {
+            <div class="activity-header">
+              <span class="activity-spinner"></span>
+              <span class="activity-title">Curating items...</span>
+            </div>
+            @if (store.curateProgress(); as progress) {
+              <div class="activity-detail">
+                <span class="activity-source">
+                  {{ progress.phase === 'scoring' ? 'AI Scoring' : progress.phase === 'expanding' ? 'Expanding Stories' : 'Story Clustering' }}
+                </span>
+                @if (progress.phase === 'scoring' && progress.batch) {
+                  <span class="activity-status">batch {{ progress.batch }} / {{ progress.totalBatches }}</span>
+                } @else {
+                  <span class="activity-status">{{ progress.itemsProcessed }} / {{ progress.totalItems }} items</span>
+                }
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="(progress.itemsProcessed / (progress.totalItems || 1)) * 100"></div>
+              </div>
+            } @else {
+              <div class="activity-detail">
+                <span class="activity-source">Pre-filtering</span>
+                <span class="activity-status">analyzing items...</span>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Curate complete banner -->
+      @if (store.lastCurateResult(); as result) {
+        <div class="curate-banner" [class.empty]="result.itemsScored === 0">
+          @if (result.clustersCreated > 0) {
+            <span>{{ result.clustersCreated }} stories from {{ result.itemsScored }} items in {{ (result.duration / 1000).toFixed(1) }}s</span>
+          } @else if (result.itemsScored > 0) {
+            <span>Scored {{ result.itemsScored }} items in {{ (result.duration / 1000).toFixed(1) }}s</span>
+          } @else {
+            <span>No new items to curate — all items already scored</span>
+          }
+          <button class="banner-close" (click)="store.lastCurateResult.set(null)">&times;</button>
+        </div>
+      }
+
+      <!-- Curated view (accordion) -->
+      @if (store.activeView() === 'curated') {
+        @if (store.loading() && store.clusters().length === 0) {
+          <div class="feed-empty">
+            <div class="empty-icon">&#x23F3;</div>
+            <p>Loading...</p>
+          </div>
+        } @else {
+          <app-curated-view />
+        }
+      } @else {
+        <!-- Loading state -->
+        @if (store.loading() && store.items().length === 0) {
+          <div class="feed-empty">
+            <div class="empty-icon">&#x23F3;</div>
+            <p>Loading...</p>
+          </div>
+        }
+
+        <!-- Empty state -->
+        @if (!store.loading() && store.items().length === 0 && !store.scanRunning() && !store.curateRunning()) {
+          <div class="feed-empty">
+            @if (store.activeView() === 'bookmarked') {
+              <div class="empty-icon">&#x2605;</div>
+              <h3>No bookmarked items</h3>
+              <p>Bookmark items or clusters to save them here.</p>
+            } @else {
+              <div class="empty-icon">&#x1F4E1;</div>
+              <h3>No items yet</h3>
+              <p>Click "Scan Now" in the toolbar to fetch content from your sources.</p>
+            }
+          </div>
+        }
+
+        <!-- Item list -->
+        <div class="feed-list">
+          @for (item of store.items(); track item.id) {
+            <app-feed-item
+              [item]="item"
+              (dismiss)="onDismiss(item)"
+              (bookmark)="onBookmark(item)"
+              (open)="onOpen(item)"
+            />
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (store.totalPages() > 1) {
+          <div class="feed-pagination">
+            <button
+              class="page-btn"
+              [disabled]="store.filters().page <= 1"
+              (click)="store.prevPage()"
+            >
+              Previous
+            </button>
+            <span class="page-info">
+              Page {{ store.filters().page }} of {{ store.totalPages() }}
+            </span>
+            <button
+              class="page-btn"
+              [disabled]="!store.hasMore()"
+              (click)="store.nextPage()"
+            >
+              Next
+            </button>
+          </div>
+        }
       }
     </div>
   </desktop-split-pane>

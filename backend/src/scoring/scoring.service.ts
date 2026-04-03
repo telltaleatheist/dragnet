@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ItemsService, StoredItem } from '../database/items.service';
+import { InMemoryStoreService } from '../store/in-memory-store.service';
 import { DragnetConfigService } from '../config/dragnet-config.service';
 import { AIProviderService, AIProviderConfig } from './ai-provider.service';
 import { PreFilterService } from './pre-filter.service';
 import { ScoringPromptService } from './scoring-prompt.service';
+import { ScoredItem } from '../../../shared/types';
 
 interface ScoringResult {
   id: string;
@@ -21,27 +22,17 @@ export class ScoringService {
   private readonly logger = new Logger(ScoringService.name);
 
   constructor(
-    private readonly itemsService: ItemsService,
+    private readonly store: InMemoryStoreService,
     private readonly configService: DragnetConfigService,
     private readonly aiProvider: AIProviderService,
     private readonly preFilter: PreFilterService,
     private readonly promptService: ScoringPromptService,
   ) {}
 
-  /**
-   * Run pre-filter scoring on all unscored items, then AI-score the top candidates.
-   * Returns the number of items scored by AI.
-   */
-  async scoreNewItems(onProgress?: ScoringProgressCallback): Promise<number> {
+  async scoreNewItems(onProgress?: ScoringProgressCallback, customInstructions?: string): Promise<number> {
     const config = this.configService.getConfig();
 
-    // Get all unscored items
-    const { items: allItems } = this.itemsService.queryFeed({
-      page: 1,
-      limit: 500,
-    });
-
-    const unscored = allItems.filter((item) => !item.scored_at);
+    const unscored = this.store.getUnscoredItems();
     if (unscored.length === 0) {
       this.logger.log('No unscored items to process');
       return 0;
@@ -51,7 +42,7 @@ export class ScoringService {
     this.logger.log(`Pre-filtering ${unscored.length} items...`);
     for (const item of unscored) {
       const result = this.preFilter.scoreItem(item);
-      this.itemsService.updatePreFilterScore(item.id, result.score);
+      this.store.updatePreFilterScore(item.id, result.score);
     }
 
     // Step 2: Select items worth AI scoring (pre_filter_score > 0)
@@ -61,11 +52,11 @@ export class ScoringService {
     });
 
     if (candidates.length === 0) {
-      this.logger.log('No items passed pre-filter for AI scoring');
+      this.logger.log(`No items passed pre-filter for AI scoring (${unscored.length} checked, 0 matched keywords/figures)`);
       return 0;
     }
 
-    this.logger.log(`${candidates.length} items passed pre-filter, sending to AI...`);
+    this.logger.log(`${candidates.length}/${unscored.length} items passed pre-filter, sending to AI...`);
 
     // Step 3: Batch AI scoring
     const batchSize = config.scoring.batchSize;
@@ -87,7 +78,7 @@ export class ScoringService {
       onProgress?.(i + 1, batches.length, totalScored);
 
       try {
-        const scored = await this.scoreBatch(batch, aiConfig);
+        const scored = await this.scoreBatch(batch, aiConfig, customInstructions);
         totalScored += scored;
       } catch (err) {
         this.logger.error(`Batch ${i + 1} scoring failed: ${(err as Error).message}`);
@@ -98,8 +89,8 @@ export class ScoringService {
     return totalScored;
   }
 
-  private async scoreBatch(items: StoredItem[], aiConfig: AIProviderConfig): Promise<number> {
-    const prompt = this.promptService.buildBatchPrompt(items);
+  private async scoreBatch(items: ScoredItem[], aiConfig: AIProviderConfig, customInstructions?: string): Promise<number> {
+    const prompt = this.promptService.buildBatchPrompt(items, customInstructions);
 
     const response = await this.aiProvider.generateText(prompt, aiConfig);
     const results = this.parseAIResponse(response.text, items);
@@ -107,7 +98,7 @@ export class ScoringService {
     let scored = 0;
     for (const result of results) {
       try {
-        this.itemsService.updateScore(
+        this.store.updateAIScore(
           result.id,
           result.score,
           result.tags,
@@ -126,7 +117,7 @@ export class ScoringService {
     return scored;
   }
 
-  private parseAIResponse(text: string, items: StoredItem[]): ScoringResult[] {
+  private parseAIResponse(text: string, items: ScoredItem[]): ScoringResult[] {
     try {
       let jsonStr = text.trim();
       const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);

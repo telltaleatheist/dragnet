@@ -1,0 +1,42 @@
+<div class="curated-view">
+  @for (cluster of store.clusters(); track cluster.id) {
+    <div class="cluster" [class.expanded]="isExpanded(cluster.id)">
+      <div class="cluster-header" (click)="toggleCluster(cluster.id)">
+        <span class="expand-icon" [class.expanded]="isExpanded(cluster.id)">&#9654;</span>
+        <span class="score-badge" [class]="getScoreBadgeClass(cluster.score)">
+          {{ cluster.score }}
+        </span>
+        <div class="cluster-info">
+          <span class="cluster-title">{{ cluster.title }}</span>
+          <span class="cluster-summary">{{ cluster.summary }}</span>
+        </div>
+        <span class="cluster-count">{{ cluster.items.length }} items</span>
+        <span
+          class="bookmark-all-btn"
+          title="Bookmark all items in this cluster"
+          (click)="onBookmarkCluster(cluster); $event.stopPropagation()"
+        >&#9733;</span>
+      </div>
+
+      @if (isExpanded(cluster.id)) {
+        <div class="cluster-items">
+          @for (item of cluster.items; track item.id) {
+            <app-feed-item
+              [item]="item"
+              (dismiss)="onDismiss(item)"
+              (bookmark)="onBookmark(item)"
+              (open)="onOpen(item)"
+            />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (store.clusters().length === 0 && !store.loading()) {
+    <div class="curated-empty">
+      <h3>No curated stories</h3>
+      <p>Scan for items, then click Curate to group them into stories with AI.</p>
+    </div>
+  }
+</div>
