@@ -1,0 +1,117 @@
+@if (!embedded) {
+  <app-modal title="Browser Assist" [wide]="true" (closed)="close()">
+    <ng-container *ngTemplateOutlet="content" />
+  </app-modal>
+}
+@if (embedded) {
+  <ng-container *ngTemplateOutlet="content" />
+}
+
+<ng-template #content>
+  <!-- Phase tabs -->
+  <div class="phase-tabs">
+    <button
+      class="phase-tab"
+      [class.active]="phase() === 'generate'"
+      (click)="switchToGenerate()"
+    >
+      Generate Prompts
+    </button>
+    <button
+      class="phase-tab"
+      [class.active]="phase() === 'import'"
+      (click)="switchToImport()"
+    >
+      Import URLs
+    </button>
+  </div>
+
+  <!-- Generate phase -->
+  @if (phase() === 'generate') {
+    <div class="search-section">
+      <label class="section-label">Platforms</label>
+      <div class="platform-list">
+        @for (p of platforms(); track p.id; let i = $index) {
+          <label class="option-toggle" [class.active]="p.selected">
+            <input type="checkbox" [checked]="p.selected" (change)="togglePlatform(i)" />
+            <span>{{ p.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <div class="search-section">
+      <desktop-button
+        variant="primary"
+        size="sm"
+        [disabled]="generating() || selectedCount === 0"
+        [loading]="generating()"
+        (click)="generate()"
+      >
+        Generate Prompts
+      </desktop-button>
+      @if (generateError()) {
+        <span class="error-text">{{ generateError() }}</span>
+      }
+    </div>
+
+    @if (generating()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Generating prompts...</p>
+      </div>
+    }
+
+    @if (prompts().length > 0) {
+      <div class="prompts-list">
+        @for (p of prompts(); track p.platform; let i = $index) {
+          <div class="prompt-card">
+            <div class="prompt-header">
+              <span class="prompt-platform">{{ p.platform }}</span>
+              <desktop-button variant="ghost" size="xs" (click)="copyPrompt(i)">
+                {{ copiedIndex() === i ? 'Copied!' : 'Copy' }}
+              </desktop-button>
+            </div>
+            <pre class="prompt-text">{{ p.prompt }}</pre>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Import phase -->
+  @if (phase() === 'import') {
+    <div class="search-section">
+      <label class="section-label">Paste URLs <span class="hint">(one per line, optionally with " | description")</span></label>
+      <textarea
+        class="paste-area"
+        placeholder="https://twitter.com/user/status/123&#10;https://reddit.com/r/conspiracy/comments/abc | Thread about flat earth&#10;https://youtube.com/watch?v=xyz"
+        [(ngModel)]="pasteText"
+        rows="10"
+      ></textarea>
+    </div>
+
+    <div class="search-actions">
+      @if (importResult(); as result) {
+        <span class="import-result">
+          {{ result.imported }} added{{ result.skipped > 0 ? ', ' + result.skipped + ' skipped' : '' }}
+        </span>
+      } @else {
+        <span></span>
+      }
+      <desktop-button
+        variant="primary"
+        size="sm"
+        [disabled]="importing() || !pasteText.trim()"
+        [loading]="importing()"
+        (click)="importUrls()"
+      >
+        Add to Feed
+      </desktop-button>
+    </div>
+
+    @if (importError()) {
+      <span class="error-text">{{ importError() }}</span>
+    }
+  }
+</ng-template>

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import {
   WindowChromeComponent,
@@ -9,18 +10,26 @@ import {
   DesktopThemeService,
 } from './creamsicle-desktop';
 import { FeedStoreService } from './services/feed-store.service';
+import { ProfileService } from './services/profile.service';
+import { ProfileSelectorComponent } from './pages/profiles/profile-selector/profile-selector.component';
+import { ProfileWizardComponent } from './pages/profiles/profile-wizard/profile-wizard.component';
+import { RetrieveDataModalComponent } from './pages/feed/retrieve-data/retrieve-data-modal.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
     WindowChromeComponent,
     StatusBarComponent,
     DesktopButtonComponent,
+    ProfileSelectorComponent,
+    ProfileWizardComponent,
+    RetrieveDataModalComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -28,6 +37,7 @@ import { FeedStoreService } from './services/feed-store.service';
 export class App implements OnInit {
   themeService = inject(DesktopThemeService);
   feedStore = inject(FeedStoreService);
+  profileService = inject(ProfileService);
 
   statusLeftItems = computed<StatusBarItem[]>(() => {
     const items: StatusBarItem[] = [
@@ -54,6 +64,18 @@ export class App implements OnInit {
   ];
 
   statusCenterText = computed(() => {
+    // Search progress
+    if (this.feedStore.searchRunning()) {
+      const searchProg = this.feedStore.searchProgress();
+      if (searchProg) {
+        const status = searchProg.status === 'complete'
+          ? `${searchProg.itemsFound} found`
+          : searchProg.status === 'error' ? 'error' : 'fetching';
+        return `Searching: ${searchProg.source} — ${status} (${searchProg.current}/${searchProg.total})`;
+      }
+      return 'Searching...';
+    }
+
     const progress = this.feedStore.curateProgress();
     if (progress) {
       if (progress.phase === 'scoring') {
@@ -89,11 +111,36 @@ export class App implements OnInit {
     this.themeService.toggleTheme();
   }
 
-  triggerScan() {
-    this.feedStore.triggerScan();
+  openRetrieveModal() {
+    this.feedStore.openRetrieveModal();
+  }
+
+  cancelRetrieve() {
+    if (this.feedStore.scanRunning()) {
+      this.feedStore.cancelScan();
+    }
+    if (this.feedStore.searchRunning()) {
+      this.feedStore.cancelSearch();
+    }
   }
 
   triggerCurate() {
     this.feedStore.triggerCurate();
+  }
+
+  cancelCurate() {
+    this.feedStore.cancelCurate();
+  }
+
+  toggleVideoOnly() {
+    this.feedStore.videoOnly.update((v) => !v);
+  }
+
+  toggleAdversarial() {
+    this.feedStore.adversarial.update((v) => !v);
+  }
+
+  setDateFilter(value: number | null) {
+    this.feedStore.dateFilter.set(value);
   }
 }

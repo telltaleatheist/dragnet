@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { BaseSource, RawContentItem } from './base-source';
 import type { WebRssSourceConfig } from '../../../../shared/types';
 
+const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
 @Injectable()
 export class WebRssSource extends BaseSource {
   protected readonly logger = new Logger(WebRssSource.name);
@@ -9,9 +11,17 @@ export class WebRssSource extends BaseSource {
 
   async fetch(config: WebRssSourceConfig): Promise<RawContentItem[]> {
     if (!config.enabled) return [];
+    this.deadSources = [];
 
     const { XMLParser } = await import('fast-xml-parser');
-    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '$' });
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '$',
+      processEntities: true,
+      htmlEntities: true,
+      unpairedTags: ['hr', 'br', 'link', 'meta', 'img', 'input', 'source'],
+      maxNestedTags: 500,
+    });
     const items: RawContentItem[] = [];
 
     for (const feed of config.feeds) {
@@ -19,7 +29,18 @@ export class WebRssSource extends BaseSource {
         const feedItems = await this.fetchFeed(parser, feed.url, feed.name);
         items.push(...feedItems);
       } catch (err) {
-        this.logger.warn(`Failed to fetch RSS feed "${feed.name}": ${(err as Error).message}`);
+        const msg = (err as Error).message;
+        this.logger.warn(`Failed to fetch RSS feed "${feed.name}": ${msg}`);
+
+        // Mark permanently broken feeds as dead
+        if (msg.includes('403') || msg.includes('fetch failed') || msg.includes('ENOTFOUND')) {
+          this.deadSources.push({
+            platform: 'web',
+            sourceType: 'feed',
+            value: feed.url,
+            reason: msg.includes('403') ? 'blocked by Cloudflare or server' : 'domain unreachable',
+          });
+        }
       }
     }
 
@@ -32,7 +53,11 @@ export class WebRssSource extends BaseSource {
     feedName: string,
   ): Promise<RawContentItem[]> {
     const response = await fetch(feedUrl, {
-      headers: { 'User-Agent': 'dragnet/1.0 (content aggregator)' },
+      headers: {
+        'User-Agent': BROWSER_UA,
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+      },
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
@@ -40,7 +65,22 @@ export class WebRssSource extends BaseSource {
     }
 
     const xml = await response.text();
-    const parsed = parser.parse(xml);
+
+    // Some feeds have deeply nested or entity-heavy XML — use a lenient parse
+    let parsed: any;
+    try {
+      parsed = parser.parse(xml);
+    } catch (parseErr) {
+      // Retry with a stripped-down version (remove CDATA, entities, etc.)
+      const cleaned = xml
+        .replace(/<!DOCTYPE[^>]*>/gi, '')
+        .replace(/<!ENTITY[^>]*>/gi, '');
+      try {
+        parsed = parser.parse(cleaned);
+      } catch {
+        throw parseErr; // throw the original error
+      }
+    }
 
     // Handle both RSS and Atom formats
     const entries =
@@ -70,7 +110,8 @@ export class WebRssSource extends BaseSource {
       thumbnailUrl = entry['media:content'].$url;
     } else {
       // Try to extract first image from content HTML
-      const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/);
+      const contentStr = typeof content === 'string' ? content : String(content || '');
+      const imgMatch = contentStr.match(/<img[^>]+src=["']([^"']+)["']/);
       if (imgMatch) thumbnailUrl = imgMatch[1];
     }
 
@@ -80,7 +121,7 @@ export class WebRssSource extends BaseSource {
       author: typeof author === 'string' ? author : String(author),
       platform: 'web',
       contentType: 'article',
-      textContent: this.truncateText(this.stripHtml(content)),
+      textContent: this.truncateText(this.stripHtml(typeof content === 'string' ? content : String(content || ''))),
       publishedAt: published ? new Date(published).toISOString() : undefined,
       thumbnailUrl,
       sourceAccount: feedName,

@@ -1,6 +1,13 @@
 <div class="curated-view">
   @for (cluster of store.clusters(); track cluster.id) {
-    <div class="cluster" [class.expanded]="isExpanded(cluster.id)">
+    <div
+      class="cluster"
+      [class.expanded]="isExpanded(cluster.id)"
+      [class.drag-over]="dragOverClusterId === cluster.id"
+      (dragover)="onDragOver($event, cluster)"
+      (dragleave)="onDragLeave(cluster)"
+      (drop)="onDrop($event, cluster)"
+    >
       <div class="cluster-header" (click)="toggleCluster(cluster.id)">
         <span class="expand-icon" [class.expanded]="isExpanded(cluster.id)">&#9654;</span>
         <span class="score-badge" [class]="getScoreBadgeClass(cluster.score)">
@@ -10,23 +17,43 @@
           <span class="cluster-title">{{ cluster.title }}</span>
           <span class="cluster-summary">{{ cluster.summary }}</span>
         </div>
+        @if (getClusterAge(cluster)) {
+          <span class="cluster-date" [class]="getClusterAgeClass(cluster)">
+            {{ getClusterAge(cluster) }}
+          </span>
+        }
         <span class="cluster-count">{{ cluster.items.length }} items</span>
         <span
           class="bookmark-all-btn"
           title="Bookmark all items in this cluster"
           (click)="onBookmarkCluster(cluster); $event.stopPropagation()"
         >&#9733;</span>
+        <span
+          class="remove-cluster-btn"
+          title="Remove this cluster"
+          (click)="onRemoveCluster(cluster); $event.stopPropagation()"
+        >&times;</span>
       </div>
 
       @if (isExpanded(cluster.id)) {
         <div class="cluster-items">
-          @for (item of cluster.items; track item.id) {
-            <app-feed-item
-              [item]="item"
-              (dismiss)="onDismiss(item)"
-              (bookmark)="onBookmark(item)"
-              (open)="onOpen(item)"
-            />
+          @for (item of cluster.items; track item.id; let idx = $index) {
+            <div
+              class="cluster-item-row"
+              [class.drop-above]="dragOverIndex === idx && dragOverClusterId === cluster.id"
+              draggable="true"
+              (dragstart)="onDragStart($event, item, cluster, idx)"
+              (dragend)="onDragEnd()"
+              (dragover)="onItemDragOver($event, cluster, idx)"
+              (drop)="onItemDrop($event, cluster, idx)"
+            >
+              <app-feed-item
+                [item]="item"
+                (dismiss)="onDismiss(item)"
+                (bookmark)="onBookmark(item, cluster)"
+                (open)="onOpen(item)"
+              />
+            </div>
           }
         </div>
       }

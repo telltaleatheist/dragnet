@@ -212,6 +212,12 @@ export class SourcesSettingsComponent implements OnChanges {
       instagramDiscovery: {
         enabled: this.instagramDiscoveryEnabled(),
       },
+      substackDiscovery: {
+        enabled: true,
+      },
+      twitterDiscovery: {
+        enabled: true,
+      },
     };
 
     this.api.updateConfig({ sources }).subscribe({

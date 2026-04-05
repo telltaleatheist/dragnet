@@ -27,6 +27,7 @@ export class RedditSource extends BaseSource {
 
   async fetch(config: RedditSourceConfig): Promise<RawContentItem[]> {
     if (!config.enabled) return [];
+    this.deadSources = [];
     this.topTimeframe = config.topTimeframe ?? 'week';
 
     const { XMLParser } = await import('fast-xml-parser');
@@ -38,6 +39,7 @@ export class RedditSource extends BaseSource {
     });
 
     const items: RawContentItem[] = [];
+    const failedAllTypes = new Map<string, number>(); // subreddit → 404 count
 
     for (const subreddit of config.subreddits) {
       for (const feedType of config.feedTypes) {
@@ -49,10 +51,31 @@ export class RedditSource extends BaseSource {
           );
           items.push(...feedItems);
         } catch (err) {
-          this.logger.warn(
-            `Failed to fetch r/${subreddit}/${feedType}: ${(err as Error).message}`,
-          );
+          const msg = (err as Error).message;
+          this.logger.warn(`Failed to fetch r/${subreddit}/${feedType}: ${msg}`);
+          if (msg.includes('404')) {
+            failedAllTypes.set(subreddit, (failedAllTypes.get(subreddit) || 0) + 1);
+          }
+          if (msg.includes('429')) {
+            // Rate limited — back off and skip remaining feed types for this sub
+            await new Promise((r) => setTimeout(r, 3000));
+            break;
+          }
         }
+        // Small delay between requests to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+
+    // If a subreddit 404'd on ALL feed types, it's dead
+    for (const [sub, count] of failedAllTypes) {
+      if (count >= config.feedTypes.length) {
+        this.deadSources.push({
+          platform: 'reddit',
+          sourceType: 'subreddit',
+          value: sub,
+          reason: 'subreddit does not exist or is banned',
+        });
       }
     }
 
@@ -69,7 +92,8 @@ export class RedditSource extends BaseSource {
       : `https://www.reddit.com/r/${subreddit}/${feedType}.rss`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'dragnet/1.0 (content aggregator)',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
       },
     });
 

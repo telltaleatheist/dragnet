@@ -7,13 +7,6 @@ interface TikTokDiscoveryConfig extends DiscoverySourceConfig {
   figures: FigureProfile[];
 }
 
-interface OembedResult {
-  author_name?: string;
-  author_url?: string;
-  title?: string;
-  thumbnail_url?: string;
-}
-
 @Injectable()
 export class TikTokDiscoverySource extends BaseSource {
   protected readonly logger = new Logger(TikTokDiscoverySource.name);
@@ -46,18 +39,22 @@ export class TikTokDiscoverySource extends BaseSource {
     const queries: string[] = [];
 
     for (const subject of subjects) {
-      if (subject.enabled) {
-        queries.push(`site:tiktok.com ${subject.label}`);
-      }
+      if (!subject.enabled) continue;
+      const topKw = subject.keywords
+        .filter((kw) => !kw.startsWith('#') && kw.length >= 4)
+        .slice(0, 5);
+      if (topKw.length === 0) continue;
+      const terms = topKw.map((kw) => kw.includes(' ') ? `"${kw}"` : kw);
+      queries.push(`site:tiktok.com ${terms.join(' OR ')}`);
     }
 
     for (const figure of figures) {
       if (figure.tier === 'top_priority') {
-        queries.push(`site:tiktok.com ${figure.name}`);
+        queries.push(`site:tiktok.com "${figure.name}"`);
       }
     }
 
-    return queries.slice(0, 20);
+    return queries.slice(0, 10);
   }
 
   private async searchGoogleNews(parser: any, query: string): Promise<RawContentItem[]> {
@@ -78,73 +75,46 @@ export class TikTokDiscoverySource extends BaseSource {
     const entries = parsed?.rss?.channel?.item || [];
     const entryList = Array.isArray(entries) ? entries : [entries];
 
-    // Filter to TikTok results only
-    const tiktokEntries = entryList.filter((entry: any) => {
-      const source = entry.source?.['#text'] || entry.source || '';
-      const sourceStr = typeof source === 'string' ? source : String(source);
-      return sourceStr.toLowerCase().includes('tiktok');
-    });
-
+    // All results should be from TikTok since query uses site:tiktok.com
     const items: RawContentItem[] = [];
 
-    for (const entry of tiktokEntries.slice(0, 10)) {
+    for (const entry of entryList.slice(0, 10)) {
       if (!entry?.link) continue;
 
-      const resolvedUrl = await this.resolveGoogleNewsUrl(entry.link);
-      const oembed = resolvedUrl ? await this.enrichWithOembed(resolvedUrl) : undefined;
-      items.push(this.parseEntry(entry, query, resolvedUrl, oembed));
+      // Use Google News link directly — the browser will redirect to TikTok.
+      // Google News encrypts article URLs (2024+) so server-side resolution isn't feasible.
+      const oembed = await this.enrichWithOembed(entry);
+      items.push(this.parseEntry(entry, query, oembed));
     }
 
     return items;
   }
 
-  private async resolveGoogleNewsUrl(googleUrl: string): Promise<string | null> {
-    try {
-      const response = await fetch(googleUrl, {
-        method: 'HEAD',
-        redirect: 'follow',
-        headers: { 'User-Agent': 'dragnet/1.0 (content aggregator)' },
-      });
-      const finalUrl = response.url;
-      if (finalUrl.includes('tiktok.com')) {
-        return finalUrl;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  private async enrichWithOembed(tiktokUrl: string): Promise<OembedResult | undefined> {
-    try {
-      const encoded = encodeURIComponent(tiktokUrl);
-      const response = await fetch(`https://www.tiktok.com/oembed?url=${encoded}`, {
-        headers: { 'User-Agent': 'dragnet/1.0 (content aggregator)' },
-      });
-
-      if (!response.ok) return undefined;
-
-      return (await response.json()) as OembedResult;
-    } catch {
-      return undefined;
-    }
+  private async enrichWithOembed(entry: any): Promise<{ author_name?: string; title?: string; thumbnail_url?: string } | undefined> {
+    // Try to extract a TikTok URL from the entry title (sometimes contains @username)
+    // For oembed we'd need the actual TikTok URL which we can't get server-side
+    // Just return undefined — we'll use Google News metadata instead
+    return undefined;
   }
 
   private parseEntry(
     entry: any,
     query: string,
-    resolvedUrl: string | null,
-    oembed?: OembedResult,
+    oembed?: { author_name?: string; title?: string; thumbnail_url?: string },
   ): RawContentItem {
-    const url = resolvedUrl || (typeof entry.link === 'string' ? entry.link : '');
+    const url = typeof entry.link === 'string' ? entry.link : '';
     const title = oembed?.title || (typeof entry.title === 'string' ? entry.title : String(entry.title || ''));
     const source = entry.source?.['#text'] || entry.source || '';
     const googleAuthor = typeof source === 'string' ? source : String(source);
     const author = oembed?.author_name || googleAuthor || 'TikTok';
     const published = entry.pubDate || '';
 
-    // Strip site: prefix from query for sourceAccount
-    const cleanQuery = query.replace(/^site:tiktok\.com\s*/i, '');
+    // Extract @username from title if present (TikTok titles often include @username)
+    let accountName = oembed?.author_name || '';
+    if (!accountName) {
+      const atMatch = title.match(/@([\w.]+)/);
+      if (atMatch) accountName = atMatch[1];
+    }
 
     return {
       url: this.normalizeUrl(url),
@@ -154,11 +124,10 @@ export class TikTokDiscoverySource extends BaseSource {
       contentType: 'video',
       thumbnailUrl: oembed?.thumbnail_url,
       publishedAt: published ? new Date(published).toISOString() : undefined,
-      sourceAccount: `tiktok-discovery:${cleanQuery}`,
+      sourceAccount: accountName ? `@${accountName}` : '@TikTok',
       metadata: {
         searchQuery: query,
-        oembedAuthor: oembed?.author_name,
-        oembedTitle: oembed?.title,
+        googleNewsSource: true,
       },
     };
   }

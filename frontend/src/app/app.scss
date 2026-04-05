@@ -13,6 +13,11 @@ desktop-window {
   height: 100%;
 }
 
+desktop-window ::ng-deep .toolbar {
+  height: 44px;
+  padding: $spacing-1 $spacing-3;
+}
+
 // Fix status bar overlap: replace absolute-center with a 3-column grid
 desktop-status-bar ::ng-deep .status-bar {
   display: grid;
@@ -39,6 +44,10 @@ desktop-status-bar ::ng-deep .status-bar {
   height: 100%;
   padding: 0 $spacing-3;
   gap: $spacing-3;
+}
+
+profile-selector {
+  flex-shrink: 0;
 }
 
 .toolbar-nav {
@@ -75,11 +84,98 @@ desktop-status-bar ::ng-deep .status-bar {
   line-height: 1;
 }
 
-.toolbar-spacer {
+.toolbar-search {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  min-width: 0;
+
+  .search-input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0 $spacing-2;
+    border: 1px solid var(--border-default);
+    border-radius: $radius-md;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-family: $font-body;
+    font-size: $font-size-sm;
+    outline: none;
+    transition: border-color $duration-fast $ease-out;
+
+    &::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    &:focus {
+      border-color: var(--border-accent);
+    }
+  }
 }
 
 .toolbar-actions {
   display: flex;
+  align-items: center;
   gap: $spacing-2;
+}
+
+.date-filter {
+  height: 26px;
+  padding: 0 $spacing-2;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: $font-body;
+  font-size: $font-size-xs;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--border-accent);
+  }
+}
+
+.video-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  padding: $spacing-1 $spacing-2;
+  border-radius: $radius-md;
+  transition: all $duration-fast $ease-out;
+
+  input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--text-accent);
+  }
+
+  span {
+    font-family: $font-body;
+    font-size: $font-size-xs;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  &:hover {
+    background: var(--hover-bg);
+
+    span {
+      color: var(--text-primary);
+    }
+  }
+
+  &.active {
+    background: var(--selected-bg-muted);
+
+    span {
+      color: var(--text-accent);
+    }
+  }
 }

@@ -1,0 +1,120 @@
+@use '../../../creamsicle-desktop/styles/variables' as *;
+
+.modal-split {
+  display: flex;
+  min-height: 400px;
+  margin: -$spacing-5;
+}
+
+.split-left {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+  padding: $spacing-4;
+  overflow-y: auto;
+}
+
+.split-right {
+  flex: 1;
+  padding: $spacing-4 $spacing-5;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-3;
+}
+
+.tab-bar {
+  display: flex;
+  gap: $spacing-1;
+  justify-content: center;
+}
+
+.tab {
+  padding: $spacing-1-5 $spacing-3;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}
+
+.global-options {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-3;
+  padding: $spacing-2 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.option-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-1;
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: $spacing-1 $spacing-2;
+  border-radius: $radius-md;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    color: var(--text-accent);
+  }
+
+  input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--text-accent);
+  }
+}
+
+.date-select {
+  height: 26px;
+  padding: 0 $spacing-2;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: $font-body;
+  font-size: $font-size-xs;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--border-accent);
+  }
+}
+
+.terms-summary {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.tab-content {
+  min-height: 200px;
+  flex: 1;
+}

@@ -13,11 +13,13 @@
           <span class="view-label">{{ viewLabel() }}</span>
           @if (store.activeView() === 'curated') {
             <span class="view-count">{{ store.clusters().length }} stories, {{ store.totalItems() }} items</span>
+          } @else if (store.activeView() === 'bookmarked') {
+            <span class="view-count">{{ store.bookmarkedClusters().length }} clusters, {{ store.totalItems() }} items</span>
           } @else {
             <span class="view-count">{{ store.totalItems() }} items</span>
           }
         </div>
-        @if (store.activeView() !== 'curated') {
+        @if (store.activeView() === 'all') {
           <input
             type="text"
             class="search-input"
@@ -27,6 +29,28 @@
           />
         }
       </div>
+
+      <!-- Platform filter pills -->
+      @if (store.totalItems() > 0 && store.activeView() === 'all' && platformButtons().length > 1) {
+        <div class="platform-filters">
+          <button
+            class="platform-pill"
+            [class.active]="!store.activePlatformFilter()"
+            (click)="store.clearPlatformFilter()"
+          >
+            All
+          </button>
+          @for (btn of platformButtons(); track btn.platform) {
+            <button
+              class="platform-pill"
+              [class.active]="store.activePlatformFilter() === btn.platform"
+              (click)="store.togglePlatformFilter(btn.platform)"
+            >
+              {{ btn.label }} <span class="pill-count">{{ btn.count }}</span>
+            </button>
+          }
+        </div>
+      }
 
       <!-- Custom Instructions (collapsed by default) -->
       @if ((store.activeView() === 'curated' || store.activeView() === 'all') && !store.curateRunning()) {
@@ -49,8 +73,8 @@
         }
       }
 
-      <!-- Activity panel (scan/curate progress) -->
-      @if (store.scanRunning() || store.curateRunning()) {
+      <!-- Activity panel (scan/curate/search progress) -->
+      @if (store.scanRunning() || store.curateRunning() || store.searchRunning()) {
         <div class="activity-panel">
           @if (store.scanRunning()) {
             <div class="activity-header">
@@ -96,6 +120,24 @@
               </div>
             }
           }
+          @if (store.searchRunning()) {
+            <div class="activity-header">
+              <span class="activity-spinner"></span>
+              <span class="activity-title">Searching...</span>
+            </div>
+            @if (store.searchProgress(); as progress) {
+              <div class="activity-detail">
+                <span class="activity-source">{{ progress.source }}</span>
+                <span class="activity-status" [class.error]="progress.status === 'error'">
+                  {{ progress.status === 'complete' ? progress.itemsFound + ' found' : progress.status === 'error' ? 'error' : 'fetching...' }}
+                </span>
+                <span class="activity-progress">{{ progress.current }} / {{ progress.total }}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="(progress.current / progress.total) * 100"></div>
+              </div>
+            }
+          }
         </div>
       }
 
@@ -123,6 +165,15 @@
         } @else {
           <app-curated-view />
         }
+      } @else if (store.activeView() === 'bookmarked') {
+        @if (store.loading() && store.bookmarkedClusters().length === 0) {
+          <div class="feed-empty">
+            <div class="empty-icon">&#x23F3;</div>
+            <p>Loading...</p>
+          </div>
+        } @else {
+          <app-bookmarked-view />
+        }
       } @else {
         <!-- Loading state -->
         @if (store.loading() && store.items().length === 0) {
@@ -133,16 +184,16 @@
         }
 
         <!-- Empty state -->
-        @if (!store.loading() && store.items().length === 0 && !store.scanRunning() && !store.curateRunning()) {
+        @if (!store.loading() && store.items().length === 0 && !store.scanRunning() && !store.curateRunning() && !store.searchRunning()) {
           <div class="feed-empty">
-            @if (store.activeView() === 'bookmarked') {
-              <div class="empty-icon">&#x2605;</div>
-              <h3>No bookmarked items</h3>
-              <p>Bookmark items or clusters to save them here.</p>
+            @if (!store.hasCheckedStores()) {
+              <div class="empty-icon">&#x1F4E1;</div>
+              <h3>No stores selected</h3>
+              <p>Check a Data Store in the sidebar to view its items, or click "Retrieve Data" to fetch new content.</p>
             } @else {
               <div class="empty-icon">&#x1F4E1;</div>
               <h3>No items yet</h3>
-              <p>Click "Scan Now" in the toolbar to fetch content from your sources.</p>
+              <p>Click "Retrieve Data" in the toolbar to fetch content from your sources.</p>
             }
           </div>
         }

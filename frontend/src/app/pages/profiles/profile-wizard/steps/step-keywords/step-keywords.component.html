@@ -1,0 +1,53 @@
+<div class="step-keywords">
+  @if (expanding()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>AI is expanding your keywords...</p>
+      <p class="loading-hint">This may take a moment depending on your AI provider.</p>
+    </div>
+  } @else {
+    <div class="keywords-section">
+      <div class="section-header">
+        <span class="keyword-count">{{ allKeywords().length }} keywords</span>
+        <desktop-button variant="ghost" size="xs" (click)="expand()">
+          Re-expand
+        </desktop-button>
+      </div>
+
+      <div class="keyword-chips">
+        @for (kw of allKeywords(); track kw.keyword) {
+          <span class="chip" [class.seed]="kw.isSeed">
+            {{ kw.keyword }}
+            <button class="chip-remove" (click)="removeKeyword(kw)">&times;</button>
+          </span>
+        }
+      </div>
+
+      <div class="add-keyword">
+        <input
+          class="form-input"
+          type="text"
+          placeholder="Add a keyword..."
+          [(ngModel)]="keywordInput"
+          (keydown)="onKeydown($event)"
+        />
+      </div>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="step-error">{{ error() }}</div>
+  }
+
+  <div class="step-actions">
+    <desktop-button variant="ghost" (click)="back.emit()">Back</desktop-button>
+    <desktop-button
+      variant="primary"
+      [disabled]="expanding() || allKeywords().length < 2"
+      [loading]="loading()"
+      (click)="proceed()"
+    >
+      Next: Derive Subjects
+    </desktop-button>
+  </div>
+</div>

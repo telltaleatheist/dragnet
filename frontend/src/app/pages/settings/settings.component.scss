@@ -1,5 +1,9 @@
 @use '../../creamsicle-desktop/styles/variables' as *;
 
+:host {
+  width: 100%;
+}
+
 .settings-page {
   height: 100%;
   overflow-y: auto;

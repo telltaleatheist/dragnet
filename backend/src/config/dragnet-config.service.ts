@@ -1,10 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { DEFAULT_CONFIG } from './default-config';
+import { ProfileService } from '../profile/profile.service';
 
-// Re-export the config type from shared types
 export {
   DragnetConfig,
   SourcesConfig,
@@ -24,12 +24,126 @@ import {
 export class DragnetConfigService implements OnModuleInit {
   private readonly logger = new Logger(DragnetConfigService.name);
   private config!: DragnetConfig;
-  private configPath!: string;
+
+  constructor(
+    @Inject(forwardRef(() => ProfileService))
+    private readonly profileService: ProfileService,
+  ) {}
 
   onModuleInit() {
-    this.configPath = this.getConfigPath();
-    this.config = this.loadConfig();
-    this.logger.log(`Config loaded from: ${this.configPath}`);
+    this.loadFromProfiles();
+  }
+
+  private loadFromProfiles(): void {
+    const profiles = this.profileService.listProfiles();
+
+    if (profiles.length === 0) {
+      // Check for legacy JSON config to migrate
+      const jsonPath = this.getConfigPath();
+      if (fs.existsSync(jsonPath)) {
+        this.logger.log('Found legacy JSON config — migrating to profile...');
+        this.migrateFromJson(jsonPath);
+        return;
+      }
+
+      // No profiles, no JSON — use defaults (user will see wizard)
+      this.logger.log('No profiles found, using default config');
+      this.config = { ...DEFAULT_CONFIG };
+      return;
+    }
+
+    // Load active profile
+    let activeId = this.profileService.getActiveProfileId();
+    if (!activeId || !profiles.find((p) => p.id === activeId)) {
+      activeId = profiles[0].id;
+      this.profileService.setActiveProfileId(activeId);
+    }
+
+    this.config = this.profileService.buildConfigForProfile(activeId);
+    this.logger.log(`Loaded config from profile: ${profiles.find((p) => p.id === activeId)?.name}`);
+  }
+
+  private migrateFromJson(jsonPath: string): void {
+    try {
+      const raw = fs.readFileSync(jsonPath, 'utf-8');
+      const loaded = JSON.parse(raw) as DragnetConfig;
+      const merged = this.mergeWithDefaults(loaded);
+
+      // Create a profile from the JSON config
+      const profile = this.profileService.createProfile('Migrated Profile');
+
+      // Save subjects & figures
+      this.profileService.updateSubjects(profile.id, merged.subjects);
+      this.profileService.updateFigures(profile.id, merged.figures);
+
+      // Save scoring config (without API keys — those go to app_settings)
+      this.profileService.updateScoringConfig(profile.id, {
+        batchSize: merged.scoring.batchSize,
+        editorialNotes: merged.scoring.editorialNotes,
+        weights: merged.scoring.weights,
+      } as any);
+
+      // Save app settings
+      this.profileService.updateProfileSettings(profile.id, merged.settings);
+
+      // Migrate AI keys to app_settings
+      const aiSettings: Record<string, string> = {
+        ai_provider: merged.scoring.aiProvider,
+        ai_model: merged.scoring.aiModel,
+        ollama_endpoint: merged.scoring.ollamaEndpoint,
+      };
+      if (merged.scoring.claudeApiKey) aiSettings.claude_api_key = merged.scoring.claudeApiKey;
+      if (merged.scoring.openaiApiKey) aiSettings.openai_api_key = merged.scoring.openaiApiKey;
+      this.profileService.updateAISettings(aiSettings);
+
+      // Migrate sources
+      const sources: any[] = [];
+      if (merged.sources.reddit?.subreddits) {
+        for (const sub of merged.sources.reddit.subreddits) {
+          sources.push({ platform: 'reddit', sourceType: 'subreddit', name: `r/${sub}`, value: sub });
+        }
+      }
+      if (merged.sources.twitter?.accounts) {
+        for (const acc of merged.sources.twitter.accounts) {
+          sources.push({ platform: 'twitter', sourceType: 'account', name: `@${acc}`, value: acc });
+        }
+      }
+      if (merged.sources.youtube?.channels) {
+        for (const ch of merged.sources.youtube.channels) {
+          sources.push({ platform: 'youtube', sourceType: 'channel', name: ch.name, value: ch.channelId });
+        }
+      }
+      if (merged.sources.tiktok?.accounts) {
+        for (const acc of merged.sources.tiktok.accounts) {
+          sources.push({ platform: 'tiktok', sourceType: 'account', name: `@${acc}`, value: acc });
+        }
+      }
+      if (merged.sources.tiktok?.hashtags) {
+        for (const tag of merged.sources.tiktok.hashtags) {
+          sources.push({ platform: 'tiktok', sourceType: 'hashtag', name: `#${tag}`, value: tag });
+        }
+      }
+      if (merged.sources.webRss?.feeds) {
+        for (const feed of merged.sources.webRss.feeds) {
+          sources.push({ platform: 'web', sourceType: 'feed', name: feed.name, value: feed.url });
+        }
+      }
+      this.profileService.addSources(profile.id, sources);
+
+      // Mark as onboarded and activate
+      this.profileService.markOnboarded(profile.id);
+      this.profileService.setActiveProfileId(profile.id);
+
+      // Rename JSON to backup
+      const backupPath = jsonPath.replace('.json', '.json.backup');
+      fs.renameSync(jsonPath, backupPath);
+      this.logger.log(`Migrated JSON config to profile "${profile.name}", backed up to ${backupPath}`);
+
+      this.config = this.profileService.buildConfigForProfile(profile.id);
+    } catch (err) {
+      this.logger.error(`Migration failed: ${(err as Error).message}`);
+      this.config = { ...DEFAULT_CONFIG };
+    }
   }
 
   getConfig(): DragnetConfig {
@@ -37,7 +151,6 @@ export class DragnetConfigService implements OnModuleInit {
   }
 
   updateConfig(partial: Partial<DragnetConfig>): DragnetConfig {
-    // Deep merge for nested objects so partial updates don't wipe sibling fields
     if (partial.scoring) {
       partial.scoring = { ...this.config.scoring, ...partial.scoring };
     }
@@ -48,8 +161,34 @@ export class DragnetConfigService implements OnModuleInit {
       partial.sources = { ...this.config.sources, ...partial.sources };
     }
     this.config = { ...this.config, ...partial };
-    this.saveConfig();
+
+    // Also persist scoring keys to app_settings
+    if (partial.scoring) {
+      const aiSettings: Record<string, string> = {};
+      if (partial.scoring.aiProvider) aiSettings.ai_provider = partial.scoring.aiProvider;
+      if (partial.scoring.aiModel) aiSettings.ai_model = partial.scoring.aiModel;
+      if (partial.scoring.ollamaEndpoint) aiSettings.ollama_endpoint = partial.scoring.ollamaEndpoint;
+      if (partial.scoring.claudeApiKey) aiSettings.claude_api_key = partial.scoring.claudeApiKey;
+      if (partial.scoring.openaiApiKey) aiSettings.openai_api_key = partial.scoring.openaiApiKey;
+      if (Object.keys(aiSettings).length > 0) {
+        this.profileService.updateAISettings(aiSettings);
+      }
+    }
+
     return this.config;
+  }
+
+  switchProfile(id: string): void {
+    this.profileService.setActiveProfileId(id);
+    this.config = this.profileService.buildConfigForProfile(id);
+    this.logger.log(`Switched to profile ${id}`);
+  }
+
+  reloadActiveProfile(): void {
+    const activeId = this.profileService.getActiveProfileId();
+    if (activeId) {
+      this.config = this.profileService.buildConfigForProfile(activeId);
+    }
   }
 
   getSubjects(): SubjectProfile[] {
@@ -58,7 +197,10 @@ export class DragnetConfigService implements OnModuleInit {
 
   updateSubjects(subjects: SubjectProfile[]): SubjectProfile[] {
     this.config.subjects = subjects;
-    this.saveConfig();
+    const activeId = this.profileService.getActiveProfileId();
+    if (activeId) {
+      this.profileService.updateSubjects(activeId, subjects);
+    }
     return this.config.subjects;
   }
 
@@ -68,18 +210,22 @@ export class DragnetConfigService implements OnModuleInit {
 
   updateFigures(figures: FigureProfile[]): FigureProfile[] {
     this.config.figures = figures;
-    this.saveConfig();
+    const activeId = this.profileService.getActiveProfileId();
+    if (activeId) {
+      this.profileService.updateFigures(activeId, figures);
+    }
     return this.config.figures;
   }
 
   updateScoringKeys(keys: { claudeApiKey?: string; openaiApiKey?: string }): void {
     if (keys.claudeApiKey !== undefined) {
       this.config.scoring.claudeApiKey = keys.claudeApiKey;
+      this.profileService.updateAISettings({ claude_api_key: keys.claudeApiKey });
     }
     if (keys.openaiApiKey !== undefined) {
       this.config.scoring.openaiApiKey = keys.openaiApiKey;
+      this.profileService.updateAISettings({ openai_api_key: keys.openaiApiKey });
     }
-    this.saveConfig();
   }
 
   private getConfigDir(): string {
@@ -90,31 +236,7 @@ export class DragnetConfigService implements OnModuleInit {
   }
 
   private getConfigPath(): string {
-    const dir = this.getConfigDir();
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    return path.join(dir, 'dragnet.config.json');
-  }
-
-  private loadConfig(): DragnetConfig {
-    if (fs.existsSync(this.configPath)) {
-      try {
-        const raw = fs.readFileSync(this.configPath, 'utf-8');
-        const loaded = JSON.parse(raw) as Partial<DragnetConfig>;
-        // Merge with defaults to pick up any new fields
-        return this.mergeWithDefaults(loaded);
-      } catch (err) {
-        this.logger.warn(`Failed to parse config, using defaults: ${(err as Error).message}`);
-      }
-    }
-
-    // First run — write defaults
-    this.logger.log('No config file found, creating default config');
-    const config = { ...DEFAULT_CONFIG };
-    this.config = config;
-    this.saveConfig();
-    return config;
+    return path.join(this.getConfigDir(), 'dragnet.config.json');
   }
 
   private mergeWithDefaults(loaded: Partial<DragnetConfig>): DragnetConfig {
@@ -127,13 +249,5 @@ export class DragnetConfigService implements OnModuleInit {
       figures: loaded.figures ?? DEFAULT_CONFIG.figures,
       settings: { ...DEFAULT_CONFIG.settings, ...loaded.settings },
     };
-  }
-
-  private saveConfig(): void {
-    try {
-      fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2), 'utf-8');
-    } catch (err) {
-      this.logger.error(`Failed to save config: ${(err as Error).message}`);
-    }
   }
 }

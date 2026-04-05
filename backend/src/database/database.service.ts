@@ -94,5 +94,105 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       CREATE INDEX IF NOT EXISTS idx_bookmarks_score ON bookmarks(ai_score DESC);
       CREATE INDEX IF NOT EXISTS idx_bookmarks_platform ON bookmarks(platform);
     `);
+
+    // App-level settings (AI keys, active profile)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
+
+    // Profiles
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS profiles (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        last_used_at TEXT,
+        subjects TEXT NOT NULL DEFAULT '[]',
+        figures TEXT NOT NULL DEFAULT '[]',
+        scoring_config TEXT NOT NULL DEFAULT '{}',
+        app_settings TEXT NOT NULL DEFAULT '{}',
+        reddit_feed_types TEXT NOT NULL DEFAULT '["hot","top","new"]',
+        reddit_top_timeframe TEXT NOT NULL DEFAULT 'week',
+        is_onboarded INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+
+    // Per-profile keywords
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS profile_keywords (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        keyword TEXT NOT NULL,
+        is_seed INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(profile_id, keyword)
+      );
+    `);
+
+    // Per-profile sources
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS profile_sources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        platform TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        value TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        ai_suggested INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(profile_id, platform, source_type, value)
+      );
+    `);
+
+    // Scan snapshots (raw content for replay through different scoring configs)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS scan_snapshots (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        profile_id TEXT,
+        item_count INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS snapshot_items (
+        id TEXT NOT NULL,
+        snapshot_id TEXT NOT NULL REFERENCES scan_snapshots(id) ON DELETE CASCADE,
+        url TEXT NOT NULL,
+        title TEXT NOT NULL,
+        author TEXT NOT NULL DEFAULT '',
+        platform TEXT NOT NULL,
+        content_type TEXT NOT NULL,
+        text_content TEXT,
+        published_at TEXT,
+        fetched_at TEXT NOT NULL,
+        thumbnail_url TEXT,
+        source_account TEXT NOT NULL DEFAULT '',
+        metadata TEXT,
+        PRIMARY KEY (snapshot_id, id)
+      );
+    `);
+
+    // Search term sets
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS search_term_sets (
+        id TEXT PRIMARY KEY,
+        profile_id TEXT,
+        name TEXT NOT NULL,
+        topics TEXT NOT NULL DEFAULT '[]',
+        figures TEXT NOT NULL DEFAULT '[]',
+        suggestions TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL
+      );
+    `);
+
+    // Add profile_id to bookmarks if not present
+    try {
+      this.db.exec(`ALTER TABLE bookmarks ADD COLUMN profile_id TEXT`);
+    } catch {
+      // Column already exists
+    }
   }
 }

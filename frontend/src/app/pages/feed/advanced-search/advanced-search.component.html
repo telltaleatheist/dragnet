@@ -1,0 +1,148 @@
+@if (!embedded) {
+  <app-modal title="Advanced Search" [wide]="true" (closed)="close()">
+    <ng-container *ngTemplateOutlet="fullContent" />
+  </app-modal>
+}
+@if (embedded) {
+  <div class="embedded-search">
+    <div class="terms-info">
+      <span class="term-count-label">{{ store.resolvedTerms().length }} search terms selected</span>
+      @if (store.activeTermSetId() === '__profile__') {
+        <span class="term-source">from active profile</span>
+      } @else if (store.activeTermSet(); as set) {
+        <span class="term-source">from "{{ set.name }}"</span>
+      }
+    </div>
+
+    @if (store.resolvedTerms().length > 0) {
+      <div class="chip-list preview">
+        @for (term of store.resolvedTerms().slice(0, 12); track term) {
+          <span class="chip preview-chip">{{ term }}</span>
+        }
+        @if (store.resolvedTerms().length > 12) {
+          <span class="chip preview-chip more">+{{ store.resolvedTerms().length - 12 }} more</span>
+        }
+      </div>
+    }
+
+    <div class="search-actions">
+      <desktop-button
+        variant="primary"
+        size="sm"
+        [disabled]="store.resolvedTerms().length === 0 || store.searchRunning() || store.curateRunning()"
+        (click)="search()"
+      >
+        Search
+      </desktop-button>
+    </div>
+  </div>
+}
+
+<ng-template #fullContent>
+  <!-- Topics -->
+  <div class="search-section">
+    <label class="section-label">Topics</label>
+    <div class="chip-list">
+      @for (topic of searchTopics(); track topic; let i = $index) {
+        <span class="chip seed">
+          {{ topic }}
+          <button class="chip-remove" (click)="removeTopic(i)">&times;</button>
+        </span>
+      }
+    </div>
+    <div class="input-row">
+      <input
+        class="form-input"
+        type="text"
+        placeholder="Add a topic (e.g. flat earth, chemtrails)"
+        [(ngModel)]="topicInput"
+        (keydown.enter)="addTopic()"
+      />
+      <desktop-button variant="ghost" size="sm" (click)="addTopic()" [disabled]="!topicInput.trim()">
+        Add
+      </desktop-button>
+    </div>
+  </div>
+
+  <!-- Figures -->
+  <div class="search-section">
+    <label class="section-label">People / Figures</label>
+    <div class="chip-list">
+      @for (figure of searchFigures(); track figure; let i = $index) {
+        <span class="chip seed">
+          {{ figure }}
+          <button class="chip-remove" (click)="removeFigure(i)">&times;</button>
+        </span>
+      }
+    </div>
+    <div class="input-row">
+      <input
+        class="form-input"
+        type="text"
+        placeholder="Add a person (e.g. Kandiss Taylor, Flat Earth Dave)"
+        [(ngModel)]="figureInput"
+        (keydown.enter)="addFigure()"
+      />
+      <desktop-button variant="ghost" size="sm" (click)="addFigure()" [disabled]="!figureInput.trim()">
+        Add
+      </desktop-button>
+    </div>
+  </div>
+
+  <!-- AI Expand -->
+  <div class="search-section">
+    <div class="expand-row">
+      <desktop-button
+        variant="secondary"
+        size="sm"
+        [disabled]="expanding() || (searchTopics().length === 0 && searchFigures().length === 0)"
+        [loading]="expanding()"
+        (click)="expand()"
+      >
+        AI Expand
+      </desktop-button>
+      @if (expandError()) {
+        <span class="expand-error">{{ expandError() }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- AI Suggestions -->
+  @if (suggestions().length > 0) {
+    <div class="search-section">
+      <label class="section-label">AI Suggestions <span class="hint">(click to toggle)</span></label>
+      <div class="chip-list">
+        @for (s of suggestions(); track s.text; let i = $index) {
+          <span
+            class="chip suggestion"
+            [class.disabled]="!s.enabled"
+            (click)="toggleSuggestion(i)"
+          >
+            {{ s.text }}
+            <button class="chip-remove" (click)="removeSuggestion(i); $event.stopPropagation()">&times;</button>
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  @if (expanding()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Generating search terms...</p>
+    </div>
+  }
+
+  <!-- Footer -->
+  <div class="search-actions">
+    <span class="term-count">{{ totalTerms }} search term{{ totalTerms !== 1 ? 's' : '' }}</span>
+    <desktop-button
+      variant="primary"
+      size="sm"
+      [disabled]="totalTerms === 0"
+      (click)="searchStandalone()"
+    >
+      Search
+    </desktop-button>
+  </div>
+</ng-template>

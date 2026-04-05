@@ -2,7 +2,7 @@
 
 // === Enums / Literals ===
 
-export type Platform = 'twitter' | 'reddit' | 'youtube' | 'tiktok' | 'web';
+export type Platform = 'twitter' | 'reddit' | 'youtube' | 'tiktok' | 'instagram' | 'web';
 export type ContentType = 'text' | 'video' | 'article' | 'image';
 export type ScanState = 'idle' | 'scanning' | 'scoring' | 'completed' | 'failed';
 export type FigureTier = 'top_priority' | 'high_priority' | 'monitor';
@@ -22,6 +22,7 @@ export interface ContentItem {
   fetchedAt: string;
   thumbnailUrl?: string;
   sourceAccount: string;
+  storeId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -96,6 +97,29 @@ export interface FeedFilters {
   bookmarked?: boolean;
   dismissed?: boolean;
   search?: string;
+  storeIds?: string[];
+}
+
+// === Data Stores ===
+
+export type DataStoreType = 'scan' | 'search' | 'browser-assist' | 'snapshot';
+
+export interface DataStore {
+  id: string;
+  name: string;
+  type: DataStoreType;
+  createdAt: string;
+  itemCount: number;
+  searchTerms?: string[];
+}
+
+export interface SearchTermSet {
+  id: string;
+  name: string;
+  topics: string[];
+  figures: string[];
+  suggestions: { text: string; enabled: boolean }[];
+  createdAt: string;
 }
 
 export interface FeedResponse {
@@ -125,6 +149,8 @@ export interface SourcesConfig {
   googleNews: DiscoverySourceConfig;
   tiktokDiscovery: DiscoverySourceConfig;
   instagramDiscovery: DiscoverySourceConfig;
+  substackDiscovery: DiscoverySourceConfig;
+  twitterDiscovery: DiscoverySourceConfig;
 }
 
 export interface DiscoverySourceConfig {
@@ -179,6 +205,8 @@ export interface ScoringConfig {
   openaiApiKey?: string;
   batchSize: number;
   editorialNotes?: string;
+  editorialVoice?: string;
+  targetClusterCount?: number;
   weights: ScoringWeights;
 }
 
@@ -273,11 +301,72 @@ export interface ScanCompleteEvent {
   itemsScored: number;
   errors: SourceError[];
   duration: number;
+  storeId?: string;
+  storeName?: string;
 }
 
 export interface ScanErrorEvent {
   source?: string;
   error: string;
+}
+
+// === Profiles ===
+
+export interface ProfileSummary {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt?: string;
+  isOnboarded: boolean;
+}
+
+export interface ProfileFull extends ProfileSummary {
+  updatedAt: string;
+  subjects: SubjectProfile[];
+  figures: FigureProfile[];
+  scoringConfig: Partial<ScoringConfig>;
+  appSettings: Partial<AppSettings>;
+  redditFeedTypes: string[];
+  redditTopTimeframe: RedditTopTimeframe;
+  keywords: ProfileKeyword[];
+  sources: ProfileSource[];
+}
+
+export interface ProfileKeyword {
+  id: number;
+  keyword: string;
+  isSeed: boolean;
+}
+
+export interface ProfileSource {
+  id: number;
+  platform: Platform;
+  sourceType: string;
+  name: string;
+  value: string;
+  enabled: boolean;
+  aiSuggested: boolean;
+}
+
+export interface NewProfileSource {
+  platform: Platform;
+  sourceType: string;
+  name: string;
+  value: string;
+  aiSuggested?: boolean;
+}
+
+export interface ExpandedKeyword {
+  keyword: string;
+  reasoning: string;
+}
+
+export interface DiscoveredSource {
+  platform: Platform;
+  sourceType: string;
+  name: string;
+  value: string;
+  rationale: string;
 }
 
 // === AI Provider ===

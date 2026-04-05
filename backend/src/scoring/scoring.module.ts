@@ -17,6 +17,6 @@ import { ExpansionPromptService } from './expansion-prompt.service';
     ClusteringService,
     ExpansionPromptService,
   ],
-  exports: [ScoringService, ClusteringService, AIProviderService, PreFilterService, ExpansionPromptService],
+  exports: [ScoringService, AIProviderService, PreFilterService, ExpansionPromptService],
 })
 export class ScoringModule {}

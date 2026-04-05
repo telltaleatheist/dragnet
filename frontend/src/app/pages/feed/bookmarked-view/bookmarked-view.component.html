@@ -1,0 +1,56 @@
+<div class="bookmarked-view">
+  @for (cluster of store.bookmarkedClusters(); track cluster.clusterTitle) {
+    <div
+      class="cluster"
+      [attr.data-cluster-title]="cluster.clusterTitle"
+      [class.expanded]="isExpanded(cluster.clusterTitle)"
+      [class.drag-over]="dragOverClusterTitle === cluster.clusterTitle"
+      [class.highlighted]="store.selectedBookmarkCluster() === cluster.clusterTitle"
+      (dragover)="onDragOver($event, cluster)"
+      (dragleave)="onDragLeave(cluster)"
+      (drop)="onDrop($event, cluster)"
+    >
+      <div class="cluster-header" (click)="toggleCluster(cluster.clusterTitle)">
+        <span class="expand-icon" [class.expanded]="isExpanded(cluster.clusterTitle)">&#9654;</span>
+        <div class="cluster-info">
+          <span class="cluster-title">{{ cluster.clusterTitle }}</span>
+          @if (cluster.clusterSummary) {
+            <span class="cluster-summary">{{ cluster.clusterSummary }}</span>
+          }
+        </div>
+        @if (clusterAge(cluster)) {
+          <span class="cluster-date">{{ clusterAge(cluster) }}</span>
+        }
+        <span class="cluster-count">{{ cluster.items.length }} items</span>
+      </div>
+
+      @if (isExpanded(cluster.clusterTitle)) {
+        <div class="cluster-items">
+          @for (item of cluster.items; track item.id) {
+            <div
+              class="cluster-item-row"
+              draggable="true"
+              (dragstart)="onDragStart($event, item, cluster.clusterTitle)"
+              (dragend)="onDragEnd()"
+            >
+              <app-feed-item
+                [item]="item"
+                (dismiss)="onDismiss(item)"
+                (bookmark)="onBookmark(item)"
+                (open)="onOpen(item)"
+              />
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (store.bookmarkedClusters().length === 0 && !store.loading()) {
+    <div class="bookmarked-empty">
+      <div class="empty-icon">&#x2605;</div>
+      <h3>No bookmarked items</h3>
+      <p>Star items or clusters to save them here. Bookmarks persist between restarts.</p>
+    </div>
+  }
+</div>

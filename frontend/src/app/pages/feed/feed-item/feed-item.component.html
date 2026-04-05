@@ -11,7 +11,7 @@
   <!-- Content -->
   <div class="item-content" (click)="open.emit()">
     <div class="item-header">
-      <span class="platform-icon">{{ platformIcon }}</span>
+      <span class="platform-icon" [ngClass]="platformClass">{{ platformIcon }}</span>
       <span class="item-author">{{ item.sourceAccount }}</span>
       <span class="item-source">{{ item.author }}</span>
       <span class="item-time">{{ timeAgo }}</span>
@@ -21,6 +21,8 @@
 
     @if (item.aiSummary) {
       <div class="item-summary">{{ item.aiSummary }}</div>
+    } @else if (item.textContent) {
+      <div class="item-text-content">{{ item.textContent }}</div>
     }
 
     @if (item.aiTags && item.aiTags.length > 0) {
@@ -35,7 +37,13 @@
   <!-- Thumbnail -->
   @if (item.thumbnailUrl) {
     <div class="item-thumbnail">
-      <img [src]="item.thumbnailUrl" [alt]="item.title" loading="lazy" />
+      @if (!imgFailed) {
+        <img [src]="item.thumbnailUrl" [alt]="item.title" loading="lazy" (error)="onImgError()" />
+      } @else {
+        <div class="thumbnail-placeholder">
+          <span>{{ platformIcon }}</span>
+        </div>
+      }
     </div>
   }
 

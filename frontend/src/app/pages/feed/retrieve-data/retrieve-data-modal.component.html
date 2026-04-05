@@ -1,0 +1,67 @@
+<app-modal title="Retrieve Data" [extraWide]="true" (closed)="close()">
+  <div class="modal-split">
+    <!-- Left panel: Term Sets -->
+    <div class="split-left">
+      <term-set-panel />
+    </div>
+
+    <!-- Right panel: Term builder or tabs -->
+    <div class="split-right">
+      @if (store.editingTermSet()) {
+        <term-builder
+          (saved)="onTermSetSaved($event)"
+          (cancelled)="store.cancelEditingTermSet()"
+        />
+      } @else {
+        <!-- Tab bar -->
+        <div class="tab-bar">
+          <button class="tab" [class.active]="activeTab() === 'scan'" (click)="activeTab.set('scan')">
+            Scan Sources
+          </button>
+          <button class="tab" [class.active]="activeTab() === 'search'" (click)="activeTab.set('search')">
+            Search
+          </button>
+          <button class="tab" [class.active]="activeTab() === 'browser-assist'" (click)="activeTab.set('browser-assist')">
+            Browser Assist
+          </button>
+        </div>
+
+        <!-- Global options -->
+        <div class="global-options">
+          <label class="option-toggle" [class.active]="store.adversarial()">
+            <input type="checkbox" [checked]="store.adversarial()" (change)="toggleAdversarial()" />
+            <span>Adversarial</span>
+          </label>
+          <label class="option-toggle" [class.active]="store.videoOnly()">
+            <input type="checkbox" [checked]="store.videoOnly()" (change)="toggleVideoOnly()" />
+            <span>Video Only</span>
+          </label>
+          <select class="date-select" [ngModel]="store.dateFilter()" (ngModelChange)="store.dateFilter.set($event)">
+            <option [ngValue]="null">Any date</option>
+            <option [ngValue]="7">Past week</option>
+            <option [ngValue]="30">Past month</option>
+            <option [ngValue]="365">Past year</option>
+          </select>
+        </div>
+
+        <!-- Active terms summary -->
+        <div class="terms-summary">
+          Using {{ activeTermLabel }}
+        </div>
+
+        <!-- Tab content -->
+        <div class="tab-content">
+          @if (activeTab() === 'scan') {
+            <scan-tab (started)="onStarted()" />
+          }
+          @if (activeTab() === 'search') {
+            <advanced-search [embedded]="true" (started)="onStarted()" />
+          }
+          @if (activeTab() === 'browser-assist') {
+            <browser-assist [embedded]="true" />
+          }
+        </div>
+      }
+    </div>
+  </div>
+</app-modal>

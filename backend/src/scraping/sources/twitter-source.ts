@@ -2,11 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { BaseSource, RawContentItem } from './base-source';
 import type { TwitterSourceConfig } from '../../../../shared/types';
 
-const NITTER_INSTANCES = [
-  'https://nitter.net',
-  'https://nitter.poast.org',
-  'https://nitter.privacydev.net',
-];
+const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 @Injectable()
 export class TwitterSource extends BaseSource {
@@ -14,100 +10,110 @@ export class TwitterSource extends BaseSource {
   readonly platform = 'twitter';
 
   async fetch(config: TwitterSourceConfig): Promise<RawContentItem[]> {
-    if (!config.enabled) return [];
+    if (!config.enabled || config.accounts.length === 0) return [];
+    this.deadSources = [];
 
     const { XMLParser } = await import('fast-xml-parser');
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '$' });
     const items: RawContentItem[] = [];
+    const seenUrls = new Set<string>();
 
     for (const account of config.accounts) {
       try {
-        const accountItems = await this.fetchAccount(parser, account);
-        items.push(...accountItems);
+        const accountItems = await this.searchAccountViaGoogle(parser, account);
+        for (const item of accountItems) {
+          if (!seenUrls.has(item.url)) {
+            seenUrls.add(item.url);
+            items.push(item);
+          }
+        }
       } catch (err) {
-        this.logger.warn(`Failed to fetch @${account}: ${(err as Error).message}`);
+        this.logger.warn(`Twitter @${account} search failed: ${(err as Error).message}`);
       }
-      await this.delay(1000);
+
+      // Rate limit: 1s between Google News queries
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+
+    this.logger.log(`Twitter: found ${items.length} items via Google News for ${config.accounts.length} accounts`);
+    return items;
+  }
+
+  private async searchAccountViaGoogle(parser: any, account: string): Promise<RawContentItem[]> {
+    // Search Google News for tweets from this account
+    // Try both x.com and twitter.com since Google indexes both
+    const query = `site:x.com OR site:twitter.com "${account}"`;
+    const encoded = encodeURIComponent(query);
+    const url = `https://news.google.com/rss/search?q=${encoded}&hl=en-US&gl=US&ceid=US:en`;
+
+    const response = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA, 'Accept': 'application/rss+xml, application/xml, text/xml' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for Google News search`);
+    }
+
+    const xml = await response.text();
+    const parsed = parser.parse(xml);
+
+    const entries = parsed?.rss?.channel?.item || [];
+    const entryList = Array.isArray(entries) ? entries : [entries];
+
+    // Filter to entries that reference x.com or twitter.com
+    const twitterEntries = entryList.filter((entry: any) => {
+      const link = typeof entry.link === 'string' ? entry.link : '';
+      const title = typeof entry.title === 'string' ? entry.title : '';
+      const desc = typeof entry.description === 'string' ? entry.description : '';
+      const combined = `${link} ${title} ${desc}`.toLowerCase();
+      return combined.includes('x.com') || combined.includes('twitter.com');
+    });
+
+    const items: RawContentItem[] = [];
+
+    for (const entry of twitterEntries.slice(0, 15)) {
+      if (!entry?.link) continue;
+      // Use Google News link directly — browser will redirect to X/Twitter.
+      // Google News encrypts article URLs (2024+) so server-side resolution isn't feasible.
+      items.push(this.parseEntry(entry, account, null));
+    }
+
+    if (items.length > 0) {
+      this.logger.debug(`@${account}: found ${items.length} items via Google News`);
     }
 
     return items;
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+  private parseEntry(entry: any, account: string, resolvedUrl: string | null): RawContentItem {
+    const googleLink = typeof entry.link === 'string' ? entry.link : '';
+    const url = resolvedUrl || googleLink;
 
-  private async fetchAccount(
-    parser: any,
-    account: string,
-  ): Promise<RawContentItem[]> {
-    for (const instance of NITTER_INSTANCES) {
-      const url = `${instance}/${account}/rss`;
+    const rawTitle = typeof entry.title === 'string' ? entry.title : String(entry.title || '');
+    const title = rawTitle
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"');
 
-      try {
-        const response = await fetch(url, {
-          headers: { 'User-Agent': 'dragnet/1.0 (content aggregator)' },
-          signal: AbortSignal.timeout(15000),
-        });
+    const source = entry.source?.['#text'] || entry.source || '';
+    const author = typeof source === 'string' ? source : String(source);
+    const published = entry.pubDate || '';
 
-        if (!response.ok) {
-          this.logger.debug(`${instance} returned ${response.status} for @${account}, trying next...`);
-          continue;
-        }
-
-        const xml = await response.text();
-        const parsed = parser.parse(xml);
-        const entries = parsed?.rss?.channel?.item;
-        if (!entries) return [];
-
-        const entryList = Array.isArray(entries) ? entries : [entries];
-        return entryList
-          .filter((entry: any) => entry)
-          .map((entry: any) => this.parseEntry(entry, account));
-      } catch (err) {
-        this.logger.debug(`${instance} failed for @${account}: ${(err as Error).message}`);
-        continue;
-      }
-    }
-
-    throw new Error(`All Nitter instances failed for @${account}`);
-  }
-
-  private parseEntry(entry: any, account: string): RawContentItem {
-    const guid = entry.guid?.['#text'] || entry.guid || '';
-    const tweetId = typeof guid === 'string' ? guid : String(guid);
-    const canonicalUrl = `https://x.com/${account}/status/${tweetId}`;
-
-    // Nitter links look like https://nitter.net/user/status/123#m
-    const nitterLink = typeof entry.link === 'string' ? entry.link : '';
-    const linkMatch = nitterLink.match(/\/status\/(\d+)/);
-    const url = linkMatch
-      ? `https://x.com/${account}/status/${linkMatch[1]}`
-      : canonicalUrl;
-
-    const title = entry.title || '';
-    const creator = entry['dc:creator'] || `@${account}`;
-    const description = entry.description || '';
-    const pubDate = entry.pubDate || '';
-
-    // Strip HTML from description for text content
-    const textContent = this.stripHtml(description);
-
-    // Extract images from description HTML
-    const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["']/);
-    const hasVideo = description.includes('<video') || description.includes('gallery-video');
+    // Try to extract tweet text from description
+    const rawDesc = typeof entry.description === 'string' ? entry.description : '';
+    const textContent = this.stripHtml(rawDesc);
 
     return {
       url: this.normalizeUrl(url),
-      title: textContent.slice(0, 120) + (textContent.length > 120 ? '...' : ''),
-      author: creator,
+      title,
+      author: author || `@${account}`,
       platform: 'twitter',
-      contentType: hasVideo ? 'video' : (imgMatch ? 'image' : 'text'),
+      contentType: 'text',
       textContent: this.truncateText(textContent),
-      publishedAt: pubDate ? new Date(pubDate).toISOString() : undefined,
-      thumbnailUrl: imgMatch?.[1] || undefined,
+      publishedAt: published ? new Date(published).toISOString() : undefined,
       sourceAccount: `@${account}`,
-      metadata: { account },
+      metadata: { account, resolvedUrl: !!resolvedUrl },
     };
   }
 

@@ -1,0 +1,55 @@
+<app-modal [title]="stepTitle" [wide]="true" [showClose]="true" (closed)="close()">
+  <!-- Step dots -->
+  <div class="wizard-progress">
+    @for (step of ['name', 'keywords', 'subjects', 'sources', 'complete']; track step; let i = $index) {
+      <div class="step-dot" [class.active]="i === stepIndex" [class.completed]="i < stepIndex"></div>
+    }
+  </div>
+
+  <!-- Step content -->
+  @switch (currentStep()) {
+    @case ('name') {
+      <step-name (complete)="onNameComplete($event)" />
+    }
+    @case ('keywords') {
+      <step-keywords
+        [profileId]="profileId()!"
+        [keywords]="keywords()"
+        (complete)="onKeywordsComplete($event)"
+        (back)="goBack()"
+      />
+    }
+    @case ('subjects') {
+      <step-subjects
+        [profileId]="profileId()!"
+        [subjects]="subjects()"
+        [figures]="figures()"
+        (complete)="onSubjectsComplete($event)"
+        (back)="goBack()"
+      />
+    }
+    @case ('sources') {
+      <step-sources
+        [profileId]="profileId()!"
+        [sources]="sources()"
+        (complete)="onSourcesComplete()"
+        (back)="goBack()"
+      />
+    }
+    @case ('complete') {
+      <step-complete
+        [keywords]="keywords()"
+        [subjects]="subjects()"
+        [figures]="figures()"
+        [sources]="sources()"
+        [loading]="loading()"
+        (activate)="onFinalize()"
+        (back)="goBack()"
+      />
+    }
+  }
+
+  @if (error()) {
+    <div class="wizard-error">{{ error() }}</div>
+  }
+</app-modal>

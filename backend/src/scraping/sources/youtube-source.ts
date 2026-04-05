@@ -9,17 +9,33 @@ export class YouTubeSource extends BaseSource {
 
   async fetch(config: YouTubeSourceConfig): Promise<RawContentItem[]> {
     if (!config.enabled) return [];
+    this.deadSources = [];
 
     const { XMLParser } = await import('fast-xml-parser');
     const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '$' });
     const items: RawContentItem[] = [];
 
     for (const channel of config.channels) {
+      // Skip channels that clearly don't have a real channel ID — they need resolution
+      if (!channel.channelId.startsWith('UC')) {
+        this.logger.warn(`YouTube channel "${channel.name}" has invalid ID "${channel.channelId}" — needs resolution via POST /api/profiles/:id/sources/resolve-youtube`);
+        continue;
+      }
+
       try {
         const channelItems = await this.fetchChannel(parser, channel.channelId, channel.name);
         items.push(...channelItems);
       } catch (err) {
-        this.logger.warn(`Failed to fetch YouTube channel ${channel.name}: ${(err as Error).message}`);
+        const msg = (err as Error).message;
+        this.logger.warn(`Failed to fetch YouTube channel ${channel.name}: ${msg}`);
+        if (msg.includes('404')) {
+          this.deadSources.push({
+            platform: 'youtube',
+            sourceType: 'channel',
+            value: channel.channelId,
+            reason: 'channel does not exist',
+          });
+        }
       }
     }
 

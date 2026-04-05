@@ -6,6 +6,7 @@ import { FeedItem } from '../../models/feed.model';
 import { FeedItemComponent } from './feed-item/feed-item.component';
 import { FeedSidebarComponent } from './feed-sidebar/feed-sidebar.component';
 import { CuratedViewComponent } from './curated-view/curated-view.component';
+import { BookmarkedViewComponent } from './bookmarked-view/bookmarked-view.component';
 import { SplitPaneComponent } from '../../creamsicle-desktop';
 
 @Component({
@@ -17,6 +18,7 @@ import { SplitPaneComponent } from '../../creamsicle-desktop';
     FeedItemComponent,
     FeedSidebarComponent,
     CuratedViewComponent,
+    BookmarkedViewComponent,
     SplitPaneComponent,
   ],
   templateUrl: './feed.component.html',
@@ -26,6 +28,15 @@ export class FeedComponent {
   store = inject(FeedStoreService);
   showInstructions = false;
 
+  private readonly platformLabels: Record<string, string> = {
+    web: 'News/Web',
+    reddit: 'Reddit',
+    twitter: 'Twitter/X',
+    youtube: 'YouTube',
+    tiktok: 'TikTok',
+    instagram: 'Instagram',
+  };
+
   viewLabel = computed(() => {
     const view = this.store.activeView();
     switch (view) {
@@ -33,6 +44,17 @@ export class FeedComponent {
       case 'bookmarked': return 'Bookmarked';
       default: return 'All Items';
     }
+  });
+
+  platformButtons = computed(() => {
+    const counts = this.store.platformCounts();
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([platform, count]) => ({
+        platform,
+        label: this.platformLabels[platform] || platform,
+        count,
+      }));
   });
 
   onDismiss(item: FeedItem) {

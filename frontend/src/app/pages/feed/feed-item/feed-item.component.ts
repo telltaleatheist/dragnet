@@ -20,21 +20,28 @@ export class FeedItemComponent {
       case 'twitter': return '𝕏';
       case 'reddit': return '⬡';
       case 'youtube': return '▶';
-      case 'web': return '🌐';
+      case 'instagram': return '◻';
       case 'tiktok': return '♪';
-      default: return '📄';
+      case 'web': return '◎';
+      default: return '○';
     }
+  }
+
+  get platformClass(): string {
+    return `platform-${this.item.platform}`;
   }
 
   get timeAgo(): string {
     const date = this.item.publishedAt || this.item.fetchedAt;
     if (!date) return '';
-    const diff = Date.now() - new Date(date).getTime();
+    const d = new Date(date);
+    const diff = Date.now() - d.getTime();
     const hours = Math.floor(diff / 3600000);
     if (hours < 1) return `${Math.floor(diff / 60000)}m ago`;
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    if (days < 7) return `${days}d ago`;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   get scoreClass(): string {
@@ -43,5 +50,11 @@ export class FeedItemComponent {
     if (score >= 5) return 'score-medium';
     if (score >= 1) return 'score-low';
     return 'score-none';
+  }
+
+  imgFailed = false;
+
+  onImgError() {
+    this.imgFailed = true;
   }
 }

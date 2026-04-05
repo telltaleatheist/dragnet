@@ -1,0 +1,121 @@
+@use '../../../../creamsicle-desktop/styles/variables' as *;
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-3;
+}
+
+.panel-title {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.add-btn {
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-sm;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    border-color: var(--border-accent);
+  }
+}
+
+.term-set-row {
+  display: flex;
+  align-items: center;
+
+  &:hover .delete-btn {
+    opacity: 1;
+  }
+}
+
+.term-set-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  width: 100%;
+  padding: $spacing-2;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: $font-body;
+  cursor: pointer;
+  text-align: left;
+  transition: all $duration-fast $ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  &.active {
+    background: var(--selected-bg-muted);
+    color: var(--text-accent);
+  }
+}
+
+.radio {
+  font-size: 12px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.term-set-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.term-set-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.term-set-meta {
+  font-size: $font-size-xs;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0;
+  transition: opacity $duration-fast $ease-out, color $duration-fast $ease-out;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #e74c3c;
+  }
+}

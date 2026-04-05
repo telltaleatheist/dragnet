@@ -1,0 +1,36 @@
+@use '../../../creamsicle-desktop/styles/variables' as *;
+
+.wizard-progress {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-2;
+  margin-bottom: $spacing-5;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-subtle);
+  transition: all $duration-normal $ease-out;
+
+  &.active {
+    background: var(--text-accent);
+    transform: scale(1.3);
+  }
+
+  &.completed {
+    background: var(--text-accent);
+    opacity: 0.5;
+  }
+}
+
+.wizard-error {
+  margin-top: $spacing-3;
+  padding: $spacing-2 $spacing-3;
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: $radius-sm;
+  color: #e74c3c;
+  font-size: $font-size-sm;
+}

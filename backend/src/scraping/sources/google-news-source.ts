@@ -39,19 +39,31 @@ export class GoogleNewsSource extends BaseSource {
   private buildQueries(subjects: SubjectProfile[], figures: FigureProfile[]): string[] {
     const queries: string[] = [];
 
+    // Use subject keywords for targeted queries instead of broad labels.
+    // Quote multi-word phrases, combine top keywords with OR.
     for (const subject of subjects) {
-      if (subject.enabled) {
-        queries.push(subject.label);
-      }
+      if (!subject.enabled) continue;
+
+      const usable = subject.keywords
+        .filter((kw: string) => !kw.startsWith('#') && kw.length >= 4)
+        .slice(0, 5);
+
+      if (usable.length === 0) continue;
+
+      const terms = usable.map((kw: string) =>
+        kw.includes(' ') ? `"${kw}"` : kw,
+      );
+      queries.push(terms.join(' OR '));
     }
 
     for (const figure of figures) {
       if (figure.tier === 'top_priority') {
-        queries.push(figure.name);
+        const name = figure.name.includes(' ') ? `"${figure.name}"` : figure.name;
+        queries.push(name);
       }
     }
 
-    return queries.slice(0, 20);
+    return queries.slice(0, 10);
   }
 
   private async searchGoogleNews(parser: any, query: string): Promise<RawContentItem[]> {
@@ -86,6 +98,10 @@ export class GoogleNewsSource extends BaseSource {
     const published = entry.pubDate || '';
     const description = entry.description || '';
 
+    // Use publisher name as sourceAccount (e.g. "NPR", "Right Wing Watch")
+    // Falls back to domain name if no source attribution
+    const publisherName = author || this.extractDomain(url) || 'Google News';
+
     return {
       url: this.normalizeUrl(url),
       title,
@@ -94,9 +110,18 @@ export class GoogleNewsSource extends BaseSource {
       contentType: 'article',
       textContent: this.truncateText(this.stripHtml(typeof description === 'string' ? description : String(description))),
       publishedAt: published ? new Date(published).toISOString() : undefined,
-      sourceAccount: `news:${query}`,
+      sourceAccount: publisherName,
       metadata: { searchQuery: query, source: author },
     };
+  }
+
+  private extractDomain(url: string): string {
+    try {
+      const hostname = new URL(url).hostname.replace(/^www\./, '');
+      return hostname;
+    } catch {
+      return '';
+    }
   }
 
   private stripHtml(html: string): string {

@@ -11,6 +11,9 @@ import { DragnetConfigModule } from './config/dragnet-config.module';
 import { ScrapingModule } from './scraping/scraping.module';
 import { FeedModule } from './feed/feed.module';
 import { ScoringModule } from './scoring/scoring.module';
+import { ProfileModule } from './profile/profile.module';
+import { DebugModule } from './debug/debug.module';
+import { BrowserAssistModule } from './browser-assist/browser-assist.module';
 
 @Global()
 @Module({
@@ -28,6 +31,9 @@ import { ScoringModule } from './scoring/scoring.module';
     ScrapingModule,
     ScoringModule,
     FeedModule,
+    ProfileModule,
+    DebugModule,
+    BrowserAssistModule,
     // Serve Angular frontend if FRONTEND_PATH is provided
     ...(process.env.FRONTEND_PATH
       ? [

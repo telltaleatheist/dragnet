@@ -1,0 +1,126 @@
+<div class="builder">
+  <h3 class="builder-title">New Search Term Set</h3>
+
+  <!-- Name -->
+  <div class="search-section">
+    <label class="section-label">Name</label>
+    <input
+      class="form-input"
+      type="text"
+      placeholder="e.g. Flat Earth, QAnon Tracking..."
+      [(ngModel)]="name"
+    />
+  </div>
+
+  <!-- Topics -->
+  <div class="search-section">
+    <label class="section-label">Topics</label>
+    <div class="chip-list">
+      @for (topic of topics(); track topic; let i = $index) {
+        <span class="chip seed">
+          {{ topic }}
+          <button class="chip-remove" (click)="removeTopic(i)">&times;</button>
+        </span>
+      }
+    </div>
+    <div class="input-row">
+      <input
+        class="form-input"
+        type="text"
+        placeholder="Add a topic..."
+        [(ngModel)]="topicInput"
+        (keydown.enter)="addTopic()"
+      />
+      <desktop-button variant="ghost" size="sm" (click)="addTopic()" [disabled]="!topicInput.trim()">
+        Add
+      </desktop-button>
+    </div>
+  </div>
+
+  <!-- Figures -->
+  <div class="search-section">
+    <label class="section-label">People / Figures</label>
+    <div class="chip-list">
+      @for (figure of figures(); track figure; let i = $index) {
+        <span class="chip seed">
+          {{ figure }}
+          <button class="chip-remove" (click)="removeFigure(i)">&times;</button>
+        </span>
+      }
+    </div>
+    <div class="input-row">
+      <input
+        class="form-input"
+        type="text"
+        placeholder="Add a person..."
+        [(ngModel)]="figureInput"
+        (keydown.enter)="addFigure()"
+      />
+      <desktop-button variant="ghost" size="sm" (click)="addFigure()" [disabled]="!figureInput.trim()">
+        Add
+      </desktop-button>
+    </div>
+  </div>
+
+  <!-- AI Expand -->
+  <div class="search-section">
+    <div class="expand-row">
+      <desktop-button
+        variant="secondary"
+        size="sm"
+        [disabled]="expanding() || (topics().length === 0 && figures().length === 0)"
+        [loading]="expanding()"
+        (click)="expand()"
+      >
+        AI Expand
+      </desktop-button>
+      @if (expandError()) {
+        <span class="expand-error">{{ expandError() }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- AI Suggestions -->
+  @if (suggestions().length > 0) {
+    <div class="search-section">
+      <label class="section-label">AI Suggestions <span class="hint">(click to toggle)</span></label>
+      <div class="chip-list">
+        @for (s of suggestions(); track s.text; let i = $index) {
+          <span
+            class="chip suggestion"
+            [class.disabled]="!s.enabled"
+            (click)="toggleSuggestion(i)"
+          >
+            {{ s.text }}
+            <button class="chip-remove" (click)="removeSuggestion(i); $event.stopPropagation()">&times;</button>
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  @if (expanding()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Generating suggestions...</p>
+    </div>
+  }
+
+  <!-- Footer -->
+  <div class="builder-actions">
+    <span class="term-count">{{ totalTerms }} term{{ totalTerms !== 1 ? 's' : '' }}</span>
+    <div class="action-buttons">
+      <desktop-button variant="ghost" size="sm" (click)="cancel()">
+        Cancel
+      </desktop-button>
+      <desktop-button
+        variant="primary"
+        size="sm"
+        [disabled]="!name.trim() || totalTerms === 0"
+        (click)="save()"
+      >
+        Save
+      </desktop-button>
+    </div>
+  </div>
+</div>

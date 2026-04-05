@@ -11,6 +11,9 @@ import { RedditSearchSource } from './sources/reddit-search-source';
 import { GoogleNewsSource } from './sources/google-news-source';
 import { TikTokDiscoverySource } from './sources/tiktok-discovery-source';
 import { InstagramDiscoverySource } from './sources/instagram-discovery-source';
+import { SubstackDiscoverySource } from './sources/substack-discovery-source';
+import { TwitterDiscoverySource } from './sources/twitter-discovery-source';
+import { YouTubeShortsDiscoverySource } from './sources/youtube-shorts-discovery-source';
 import { ScoringModule } from '../scoring/scoring.module';
 
 @Module({
@@ -28,6 +31,9 @@ import { ScoringModule } from '../scoring/scoring.module';
     GoogleNewsSource,
     TikTokDiscoverySource,
     InstagramDiscoverySource,
+    SubstackDiscoverySource,
+    TwitterDiscoverySource,
+    YouTubeShortsDiscoverySource,
   ],
   exports: [ScrapingService, ScrapingGateway],
 })

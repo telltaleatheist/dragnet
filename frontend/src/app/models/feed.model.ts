@@ -10,6 +10,7 @@ export interface FeedItem {
   fetchedAt: string;
   thumbnailUrl: string | null;
   sourceAccount: string;
+  storeId?: string;
   metadata: Record<string, unknown> | null;
   preFilterScore: number;
   aiScore: number;
@@ -42,6 +43,27 @@ export interface FeedFilters {
   bookmarked?: boolean;
   dismissed?: boolean;
   search?: string;
+  storeIds?: string[];
+}
+
+export type DataStoreType = 'scan' | 'search' | 'browser-assist' | 'snapshot';
+
+export interface DataStore {
+  id: string;
+  name: string;
+  type: DataStoreType;
+  createdAt: string;
+  itemCount: number;
+  searchTerms?: string[];
+}
+
+export interface SearchTermSet {
+  id: string;
+  name: string;
+  topics: string[];
+  figures: string[];
+  suggestions: { text: string; enabled: boolean }[];
+  createdAt: string;
 }
 
 export interface StoryCluster {
@@ -88,4 +110,27 @@ export interface ScanCompleteEvent {
   itemsScored: number;
   errors: any[];
   duration: number;
+  storeId?: string;
+  storeName?: string;
+}
+
+export interface SearchCompleteEvent {
+  query: string;
+  itemsFound: number;
+  duration: number;
+  storeId?: string;
+  storeName?: string;
+}
+
+export interface BookmarkClusterSummary {
+  clusterTitle: string;
+  clusterSummary: string | null;
+  itemCount: number;
+  latestBookmarkedAt: string;
+}
+
+export interface BookmarkedClusterDetail {
+  clusterTitle: string;
+  clusterSummary: string | null;
+  items: FeedItem[];
 }

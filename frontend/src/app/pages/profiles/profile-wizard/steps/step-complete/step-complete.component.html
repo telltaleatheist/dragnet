@@ -1,0 +1,43 @@
+<div class="step-complete">
+  <div class="summary-header">
+    <p>Your profile is ready. Here's what was set up:</p>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-value">{{ keywords.length }}</div>
+      <div class="summary-label">Keywords</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-value">{{ subjects.length }}</div>
+      <div class="summary-label">Subjects</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-value">{{ figures.length }}</div>
+      <div class="summary-label">Figures</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-value">{{ sources.length }}</div>
+      <div class="summary-label">Sources</div>
+    </div>
+  </div>
+
+  @if (platformCounts.length > 0) {
+    <div class="platform-breakdown">
+      @for (pc of platformCounts; track pc.platform) {
+        <span class="platform-chip">{{ pc.platform }}: {{ pc.count }}</span>
+      }
+    </div>
+  }
+
+  <div class="step-actions">
+    <desktop-button variant="ghost" (click)="back.emit()">Back</desktop-button>
+    <desktop-button
+      variant="primary"
+      [loading]="loading"
+      (click)="activate.emit()"
+    >
+      Activate & Scan
+    </desktop-button>
+  </div>
+</div>

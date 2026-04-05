@@ -35,6 +35,8 @@ export class ScrapingGateway {
     newItems: number;
     errors: any[];
     duration: number;
+    storeId?: string;
+    storeName?: string;
   }) {
     this.server.emit('scan:complete', data);
   }
@@ -48,7 +50,7 @@ export class ScrapingGateway {
   }
 
   emitClusteringProgress(data: {
-    phase: 'scoring' | 'clustering' | 'expanding';
+    phase: string;
     batch?: number;
     totalBatches?: number;
     itemsProcessed: number;
@@ -59,6 +61,37 @@ export class ScrapingGateway {
 
   emitCurateComplete(data: { itemsScored: number; clustersCreated: number; duration: number }) {
     this.server.emit('curate:complete', data);
+  }
+
+  emitQuickSearchStarted(data: { query: string; timestamp: string }) {
+    this.server.emit('quicksearch:started', data);
+  }
+
+  emitQuickSearchProgress(data: {
+    source: string;
+    platform: string;
+    status: 'fetching' | 'complete' | 'error';
+    itemsFound: number;
+    current: number;
+    total: number;
+  }) {
+    this.server.emit('quicksearch:progress', data);
+  }
+
+  emitQuickSearchComplete(data: { query: string; itemsFound: number; duration: number; storeId?: string; storeName?: string }) {
+    this.server.emit('quicksearch:complete', data);
+  }
+
+  emitScanCancelled() {
+    this.server.emit('scan:cancelled', {});
+  }
+
+  emitCurateCancelled() {
+    this.server.emit('curate:cancelled', {});
+  }
+
+  emitQuickSearchCancelled() {
+    this.server.emit('quicksearch:cancelled', {});
   }
 
   emitFeedUpdated() {

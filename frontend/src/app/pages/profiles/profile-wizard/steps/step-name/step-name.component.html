@@ -1,0 +1,52 @@
+<div class="step-name">
+  <div class="form-group">
+    <label class="form-label">Profile Name</label>
+    <input
+      class="form-input"
+      type="text"
+      placeholder="e.g. Retro Gaming, Climate Watch..."
+      [(ngModel)]="profileName"
+      (keydown.enter)="$event.preventDefault()"
+    />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">
+      Seed Keywords
+      <span class="label-hint">(at least 2 — press Enter to add)</span>
+    </label>
+    <input
+      class="form-input"
+      type="text"
+      placeholder="Type a keyword and press Enter..."
+      [(ngModel)]="keywordInput"
+      (keydown)="onKeydown($event)"
+    />
+
+    @if (seedKeywords().length > 0) {
+      <div class="keyword-chips">
+        @for (kw of seedKeywords(); track kw) {
+          <span class="chip seed">
+            {{ kw }}
+            <button class="chip-remove" (click)="removeKeyword(kw)">&times;</button>
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="step-error">{{ error() }}</div>
+  }
+
+  <div class="step-actions">
+    <desktop-button
+      variant="primary"
+      [disabled]="!canProceed"
+      [loading]="loading()"
+      (click)="proceed()"
+    >
+      Next: Expand Keywords
+    </desktop-button>
+  </div>
+</div>

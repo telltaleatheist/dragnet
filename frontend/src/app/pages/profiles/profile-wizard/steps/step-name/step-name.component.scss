@@ -1,0 +1,101 @@
+@use '../../../../../creamsicle-desktop/styles/variables' as *;
+
+.step-name {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-4;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+}
+
+.form-label {
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.label-hint {
+  font-weight: $font-weight-regular;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  padding: $spacing-2 $spacing-3;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: $radius-md;
+  color: var(--text-primary);
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  outline: none;
+  transition: border-color $duration-fast $ease-out;
+
+  &:focus {
+    border-color: var(--text-accent);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+  }
+}
+
+.keyword-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-1-5;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-1;
+  padding: $spacing-1 $spacing-2;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  color: var(--text-primary);
+
+  &.seed {
+    background: rgba(var(--accent-rgb, 59, 130, 246), 0.15);
+    border-color: rgba(var(--accent-rgb, 59, 130, 246), 0.3);
+    color: var(--text-accent);
+  }
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.step-error {
+  padding: $spacing-2 $spacing-3;
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: $radius-sm;
+  color: #e74c3c;
+  font-size: $font-size-sm;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-2;
+  padding-top: $spacing-2;
+}

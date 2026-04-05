@@ -1,0 +1,53 @@
+<div class="step-subjects">
+  <!-- Subjects -->
+  <div class="section">
+    <h3 class="section-title">Subjects ({{ localSubjects().length }})</h3>
+    <div class="subject-grid">
+      @for (subject of localSubjects(); track subject.id) {
+        <div class="subject-card" [style.border-left-color]="subject.color">
+          <div class="subject-header">
+            <span class="subject-label">{{ subject.label }}</span>
+            <button class="remove-btn" (click)="removeSubject(subject.id)">&times;</button>
+          </div>
+          <div class="subject-keywords">
+            @for (kw of subject.keywords.slice(0, 5); track kw) {
+              <span class="mini-chip">{{ kw }}</span>
+            }
+            @if (subject.keywords.length > 5) {
+              <span class="mini-chip more">+{{ subject.keywords.length - 5 }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Figures -->
+  <div class="section">
+    <h3 class="section-title">Key Figures ({{ localFigures().length }})</h3>
+    <div class="figure-list">
+      @for (figure of localFigures(); track figure.name) {
+        <div class="figure-row">
+          <span class="figure-name">{{ figure.name }}</span>
+          <span class="figure-tier" [class]="figure.tier">{{ getTierLabel(figure.tier) }}</span>
+          <button class="remove-btn" (click)="removeFigure(figure.name)">&times;</button>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="step-error">{{ error() }}</div>
+  }
+
+  <div class="step-actions">
+    <desktop-button variant="ghost" (click)="back.emit()">Back</desktop-button>
+    <desktop-button
+      variant="primary"
+      [loading]="loading()"
+      (click)="proceed()"
+    >
+      Next: Discover Sources
+    </desktop-button>
+  </div>
+</div>

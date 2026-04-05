@@ -21,44 +21,80 @@
     <!-- Toolbar -->
     <ng-container toolbar>
       <div class="app-toolbar">
+        <profile-selector />
+
         <nav class="toolbar-nav">
           <a routerLink="/feed" routerLinkActive="active" class="nav-link">
-            <span class="nav-icon">📡</span>
+            <span class="nav-icon">&#x1F4E1;</span>
             <span class="nav-label">Feed</span>
           </a>
           <a routerLink="/sources" routerLinkActive="active" class="nav-link">
-            <span class="nav-icon">🔌</span>
+            <span class="nav-icon">&#x1F50C;</span>
             <span class="nav-label">Sources</span>
           </a>
           <a routerLink="/settings" routerLinkActive="active" class="nav-link">
-            <span class="nav-icon">⚙</span>
+            <span class="nav-icon">&#x2699;</span>
             <span class="nav-label">Settings</span>
           </a>
         </nav>
 
-        <div class="toolbar-spacer"></div>
-
         <div class="toolbar-actions">
-          <desktop-button
-            variant="secondary"
-            size="sm"
-            icon="🧠"
-            [loading]="feedStore.curateRunning()"
-            [disabled]="feedStore.scanRunning()"
-            (click)="triggerCurate()"
+          <select
+            class="date-filter"
+            [ngModel]="feedStore.dateFilter()"
+            (ngModelChange)="setDateFilter($event)"
           >
-            Curate
-          </desktop-button>
-          <desktop-button
-            variant="primary"
-            size="sm"
-            icon="🔍"
-            [loading]="feedStore.scanRunning()"
-            [disabled]="feedStore.curateRunning()"
-            (click)="triggerScan()"
-          >
-            Scan Now
-          </desktop-button>
+            <option [ngValue]="null">Any date</option>
+            <option [ngValue]="7">Past week</option>
+            <option [ngValue]="30">Past month</option>
+            <option [ngValue]="365">Past year</option>
+          </select>
+          <label class="video-toggle" [class.active]="feedStore.adversarial()">
+            <input type="checkbox" [checked]="feedStore.adversarial()" (change)="toggleAdversarial()" />
+            <span>Adversarial</span>
+          </label>
+          <label class="video-toggle" [class.active]="feedStore.videoOnly()">
+            <input type="checkbox" [checked]="feedStore.videoOnly()" (change)="toggleVideoOnly()" />
+            <span>Video Only</span>
+          </label>
+          @if (feedStore.curateRunning()) {
+            <desktop-button
+              variant="secondary"
+              size="sm"
+              (click)="cancelCurate()"
+            >
+              Cancel Curation
+            </desktop-button>
+          } @else {
+            <desktop-button
+              variant="secondary"
+              size="sm"
+              icon="&#x1F9E0;"
+              [disabled]="feedStore.scanRunning() || feedStore.searchRunning()"
+              (click)="triggerCurate()"
+            >
+              Curate
+            </desktop-button>
+          }
+          @if (feedStore.scanRunning() || feedStore.searchRunning()) {
+            <desktop-button
+              variant="secondary"
+              size="sm"
+              (click)="cancelRetrieve()"
+            >
+              Cancel
+            </desktop-button>
+          } @else {
+            <desktop-button
+              variant="primary"
+              size="sm"
+              icon="&#x1F4E5;"
+              [disabled]="feedStore.curateRunning()"
+              (click)="openRetrieveModal()"
+            >
+              Retrieve Data
+            </desktop-button>
+          }
         </div>
       </div>
     </ng-container>
@@ -75,4 +111,14 @@
       />
     </ng-container>
   </desktop-window>
+
+  <!-- Profile Wizard Modal -->
+  @if (profileService.wizardOpen()) {
+    <profile-wizard />
+  }
+
+  <!-- Retrieve Data Modal -->
+  @if (feedStore.retrieveModalOpen()) {
+    <retrieve-data-modal />
+  }
 </div>

@@ -1,0 +1,37 @@
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Search Terms</span>
+    <button class="add-btn" (click)="store.startEditingTermSet()" title="New term set">+</button>
+  </div>
+
+  <!-- Profile Default -->
+  <button
+    class="term-set-item"
+    [class.active]="store.activeTermSetId() === '__profile__'"
+    (click)="store.selectTermSet('__profile__')"
+  >
+    <span class="radio">{{ store.activeTermSetId() === '__profile__' ? '&#9679;' : '&#9675;' }}</span>
+    <div class="term-set-info">
+      <span class="term-set-name">Profile Default</span>
+      <span class="term-set-meta">{{ profileTopicCount }} topics, {{ profileFigureCount }} figures</span>
+    </div>
+  </button>
+
+  <!-- User-created sets -->
+  @for (set of store.termSets(); track set.id) {
+    <div class="term-set-row">
+      <button
+        class="term-set-item"
+        [class.active]="store.activeTermSetId() === set.id"
+        (click)="store.selectTermSet(set.id)"
+      >
+        <span class="radio">{{ store.activeTermSetId() === set.id ? '&#9679;' : '&#9675;' }}</span>
+        <div class="term-set-info">
+          <span class="term-set-name">{{ set.name }}</span>
+          <span class="term-set-meta">{{ resolvedCount(set) }} terms</span>
+        </div>
+      </button>
+      <button class="delete-btn" (click)="store.removeTermSet(set.id)" title="Delete">&times;</button>
+    </div>
+  }
+</div>

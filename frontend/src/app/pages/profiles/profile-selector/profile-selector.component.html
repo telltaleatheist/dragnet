@@ -1,0 +1,31 @@
+<div class="profile-selector" (clickOutside)="close()">
+  <button class="selector-trigger" (click)="toggle()">
+    <span class="selector-icon">&#9679;</span>
+    <span class="selector-name">{{ profileService.getActiveProfileName() }}</span>
+    <span class="selector-arrow" [class.open]="dropdownOpen()">&#9662;</span>
+  </button>
+
+  @if (dropdownOpen()) {
+    <div class="selector-dropdown">
+      @for (profile of profileService.profiles(); track profile.id) {
+        <button
+          class="dropdown-item"
+          [class.active]="profile.id === profileService.activeProfileId()"
+          (click)="select(profile.id)"
+        >
+          <span class="item-name">{{ profile.name }}</span>
+          @if (profile.id === profileService.activeProfileId()) {
+            <span class="item-check">&#10003;</span>
+          } @else {
+            <span class="item-delete" (click)="deleteProfile($event, profile.id, profile.name)">&times;</span>
+          }
+        </button>
+      }
+      <div class="dropdown-divider"></div>
+      <button class="dropdown-item new-profile" (click)="newProfile()">
+        <span class="item-icon">+</span>
+        <span class="item-name">New Profile</span>
+      </button>
+    </div>
+  }
+</div>

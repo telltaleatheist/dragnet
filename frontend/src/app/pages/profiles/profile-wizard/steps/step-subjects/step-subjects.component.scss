@@ -1,0 +1,138 @@
+@use '../../../../../creamsicle-desktop/styles/variables' as *;
+
+.step-subjects {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-4;
+}
+
+.section-title {
+  margin: 0 0 $spacing-2;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: var(--text-primary);
+}
+
+.subject-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-2;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.subject-card {
+  padding: $spacing-2 $spacing-3;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid;
+  border-radius: $radius-sm;
+}
+
+.subject-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-1;
+}
+
+.subject-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--text-primary);
+}
+
+.subject-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mini-chip {
+  padding: 1px 6px;
+  background: var(--bg-base);
+  border-radius: $radius-full;
+  font-size: 10px;
+  color: var(--text-secondary);
+
+  &.more {
+    font-style: italic;
+  }
+}
+
+.figure-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-1;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.figure-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  padding: $spacing-1 $spacing-2;
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+}
+
+.figure-name {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: var(--text-primary);
+}
+
+.figure-tier {
+  padding: 1px 8px;
+  border-radius: $radius-full;
+  font-size: 10px;
+  font-weight: $font-weight-medium;
+
+  &.top_priority {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+  }
+  &.high_priority {
+    background: rgba(230, 126, 34, 0.15);
+    color: #e67e22;
+  }
+  &.monitor {
+    background: rgba(149, 165, 166, 0.15);
+    color: #95a5a6;
+  }
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 1;
+    color: #e74c3c;
+  }
+}
+
+.step-error {
+  padding: $spacing-2 $spacing-3;
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: $radius-sm;
+  color: #e74c3c;
+  font-size: $font-size-sm;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  padding-top: $spacing-2;
+}

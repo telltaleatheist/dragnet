@@ -1,0 +1,43 @@
+<div class="step-sources">
+  <!-- Platform tabs -->
+  <div class="platform-tabs">
+    @for (p of platforms; track p.key) {
+      <button
+        class="tab"
+        [class.active]="activeTab() === p.key"
+        (click)="activeTab.set(p.key)"
+      >
+        {{ p.label }}
+        @if (platformCount(p.key) > 0) {
+          <span class="tab-count">{{ platformCount(p.key) }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Source list for active tab -->
+  <div class="source-list">
+    @for (source of sourcesForPlatform(activeTab()); track source.value) {
+      <div class="source-row">
+        <div class="source-info">
+          <span class="source-name">{{ source.name }}</span>
+          <span class="source-rationale">{{ source.rationale }}</span>
+        </div>
+        <button class="remove-btn" (click)="removeSource(source)">&times;</button>
+      </div>
+    } @empty {
+      <div class="empty-state">No sources for this platform.</div>
+    }
+  </div>
+
+  <div class="source-summary">
+    {{ localSources().length }} total sources across {{ platforms.length }} platforms
+  </div>
+
+  <div class="step-actions">
+    <desktop-button variant="ghost" (click)="back.emit()">Back</desktop-button>
+    <desktop-button variant="primary" (click)="proceed()">
+      Next: Review & Activate
+    </desktop-button>
+  </div>
+</div>

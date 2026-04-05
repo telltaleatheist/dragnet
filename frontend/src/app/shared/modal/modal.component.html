@@ -1,0 +1,13 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)">
+  <div class="modal-panel" [class.wide]="wide" [class.extra-wide]="extraWide">
+    <div class="modal-header">
+      <h2 class="modal-title">{{ title }}</h2>
+      @if (showClose) {
+        <button class="modal-close" (click)="closed.emit()">&times;</button>
+      }
+    </div>
+    <div class="modal-body">
+      <ng-content />
+    </div>
+  </div>
+</div>

@@ -11,6 +11,58 @@
         <span class="sidebar-icon" [innerHTML]="view.icon"></span>
         <span>{{ view.label }}</span>
       </button>
+      @if (view.value === 'bookmarked') {
+        @for (bc of store.bookmarkClusters(); track bc.clusterTitle) {
+          <button
+            class="sidebar-item bookmark-cluster-item"
+            [class.active]="store.activeView() === 'bookmarked' && store.selectedBookmarkCluster() === bc.clusterTitle"
+            (click)="selectBookmarkCluster(bc.clusterTitle)"
+          >
+            <span class="sidebar-icon">&#x2605;</span>
+            <span class="bookmark-cluster-name">{{ bc.clusterTitle }}</span>
+            <span class="bookmark-cluster-count">{{ bc.itemCount }}</span>
+          </button>
+        }
+      }
     }
   </div>
+
+  <!-- Data Stores -->
+  <div class="sidebar-section">
+    <div class="section-title">Data Stores</div>
+    @for (ds of store.dataStores(); track ds.id) {
+      <div class="store-row">
+        <label class="store-checkbox-label">
+          <input
+            type="checkbox"
+            [checked]="isStoreChecked(ds.id)"
+            (change)="toggleStore(ds.id)"
+          />
+          <span class="store-icon" [innerHTML]="storeTypeIcon(ds.type)"></span>
+          <span class="store-name" [title]="ds.name" (click)="toggleStoreExpansion(ds.id); $event.preventDefault()">{{ ds.name }}</span>
+          <span class="store-count">{{ ds.itemCount }}</span>
+        </label>
+        <button class="store-remove" (click)="removeStore(ds.id)" title="Remove store">&times;</button>
+      </div>
+      @if (expandedStoreId() === ds.id && ds.searchTerms?.length) {
+        <div class="store-terms">
+          <div class="store-terms-chips">
+            @for (term of ds.searchTerms; track term) {
+              <span class="term-chip">{{ term }}</span>
+            }
+          </div>
+          <button class="reuse-btn" (click)="reuseStoreTerms(ds.searchTerms!)">Reuse terms</button>
+        </div>
+      }
+      @if (expandedStoreId() === ds.id && !ds.searchTerms?.length) {
+        <div class="store-terms">
+          <span class="no-terms">No search terms recorded</span>
+        </div>
+      }
+    }
+    @if (store.dataStores().length === 0) {
+      <div class="sidebar-hint">Use "Retrieve Data" to create stores</div>
+    }
+  </div>
+
 </div>
