@@ -12,20 +12,32 @@ export class WindowService {
   }
 
   createMainWindow(): void {
-    this.mainWindow = new BrowserWindow({
+    const windowOptions: Electron.BrowserWindowConstructorOptions = {
       width: 1800,
       height: 1200,
       minWidth: 900,
       minHeight: 600,
-      titleBarStyle: 'hidden',
-      trafficLightPosition: { x: 12, y: 12 },
       backgroundColor: '#1a1917',
       webPreferences: {
         preload: AppConfig.preloadPath,
         contextIsolation: true,
         nodeIntegration: false,
       },
-    });
+    };
+
+    if (process.platform === 'darwin') {
+      windowOptions.titleBarStyle = 'hidden';
+      windowOptions.trafficLightPosition = { x: 12, y: 12 };
+    } else {
+      windowOptions.titleBarStyle = 'hidden';
+      windowOptions.titleBarOverlay = {
+        color: '#1a1917',
+        symbolColor: '#a8a29e',
+        height: 36,
+      };
+    }
+
+    this.mainWindow = new BrowserWindow(windowOptions);
 
     this.mainWindow.webContents.setZoomFactor(1.3);
 

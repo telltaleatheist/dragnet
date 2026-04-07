@@ -197,7 +197,11 @@ export class BackendService {
   private cleanup(): void {
     if (this.backendProcess && !this.backendProcess.killed) {
       try {
-        this.backendProcess.kill('SIGTERM');
+        if (process.platform === 'win32') {
+          this.backendProcess.kill();
+        } else {
+          this.backendProcess.kill('SIGTERM');
+        }
       } catch (err) {
         log.warn('Error killing backend process:', err);
       }
@@ -212,7 +216,11 @@ export class BackendService {
 
     if (pid) {
       try {
-        process.kill(pid, 'SIGKILL');
+        if (process.platform === 'win32') {
+          process.kill(pid);
+        } else {
+          process.kill(pid, 'SIGKILL');
+        }
       } catch {
         // Process may already be dead
       }

@@ -13,18 +13,20 @@ let backendService: BackendService;
 log.transports.console.level = 'info';
 log.transports.file.level = 'debug';
 
-// Handle process signals
-process.on('SIGTERM', () => {
-  log.info('Received SIGTERM, shutting down...');
-  if (backendService) backendService.shutdown();
-  app.quit();
-});
+// Handle process signals (SIGTERM/SIGINT are not reliable on Windows)
+if (process.platform !== 'win32') {
+  process.on('SIGTERM', () => {
+    log.info('Received SIGTERM, shutting down...');
+    if (backendService) backendService.shutdown();
+    app.quit();
+  });
 
-process.on('SIGINT', () => {
-  log.info('Received SIGINT, shutting down...');
-  if (backendService) backendService.shutdown();
-  app.quit();
-});
+  process.on('SIGINT', () => {
+    log.info('Received SIGINT, shutting down...');
+    if (backendService) backendService.shutdown();
+    app.quit();
+  });
+}
 
 process.on('uncaughtException', (error) => {
   log.error('Uncaught exception:', error);
