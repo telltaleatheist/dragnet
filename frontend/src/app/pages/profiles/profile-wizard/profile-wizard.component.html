@@ -1,7 +1,7 @@
 <app-modal [title]="stepTitle" [wide]="true" [showClose]="true" (closed)="close()">
   <!-- Step dots -->
   <div class="wizard-progress">
-    @for (step of ['name', 'keywords', 'subjects', 'sources', 'complete']; track step; let i = $index) {
+    @for (step of ['name', 'ai-setup', 'keywords', 'subjects', 'sources', 'complete']; track step; let i = $index) {
       <div class="step-dot" [class.active]="i === stepIndex" [class.completed]="i < stepIndex"></div>
     }
   </div>
@@ -10,6 +10,9 @@
   @switch (currentStep()) {
     @case ('name') {
       <step-name (complete)="onNameComplete($event)" />
+    }
+    @case ('ai-setup') {
+      <step-ai (complete)="onAiSetupComplete()" (back)="goBack()" />
     }
     @case ('keywords') {
       <step-keywords

@@ -7,9 +7,10 @@ import { StepKeywordsComponent } from './steps/step-keywords/step-keywords.compo
 import { StepSubjectsComponent } from './steps/step-subjects/step-subjects.component';
 import { StepSourcesComponent } from './steps/step-sources/step-sources.component';
 import { StepCompleteComponent } from './steps/step-complete/step-complete.component';
+import { StepAiComponent } from './steps/step-ai/step-ai.component';
 
-export type WizardStep = 'name' | 'keywords' | 'subjects' | 'sources' | 'complete';
-const STEPS: WizardStep[] = ['name', 'keywords', 'subjects', 'sources', 'complete'];
+export type WizardStep = 'name' | 'ai-setup' | 'keywords' | 'subjects' | 'sources' | 'complete';
+const STEPS: WizardStep[] = ['name', 'ai-setup', 'keywords', 'subjects', 'sources', 'complete'];
 
 @Component({
   selector: 'profile-wizard',
@@ -22,6 +23,7 @@ const STEPS: WizardStep[] = ['name', 'keywords', 'subjects', 'sources', 'complet
     StepSubjectsComponent,
     StepSourcesComponent,
     StepCompleteComponent,
+    StepAiComponent,
   ],
   templateUrl: './profile-wizard.component.html',
   styleUrl: './profile-wizard.component.scss',
@@ -51,6 +53,7 @@ export class ProfileWizardComponent {
   get stepTitle(): string {
     switch (this.currentStep()) {
       case 'name': return 'Create Profile';
+      case 'ai-setup': return 'Connect AI Provider';
       case 'keywords': return 'Review Keywords';
       case 'subjects': return 'Subjects & Figures';
       case 'sources': return 'Content Sources';
@@ -62,14 +65,19 @@ export class ProfileWizardComponent {
     this.profileService.closeWizard();
   }
 
-  // Step 1 → 2
+  // Step 1 → ai-setup
   onNameComplete(data: { profileId: string; keywords: ProfileKeyword[] }) {
     this.profileId.set(data.profileId);
     this.keywords.set(data.keywords);
+    this.currentStep.set('ai-setup');
+  }
+
+  // ai-setup → keywords
+  onAiSetupComplete() {
     this.currentStep.set('keywords');
   }
 
-  // Step 2 → 3
+  // keywords → subjects
   onKeywordsComplete(data: { subjects: SubjectProfile[]; figures: FigureProfile[] }) {
     this.subjects.set(data.subjects);
     this.figures.set(data.figures);

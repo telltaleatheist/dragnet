@@ -1,0 +1,108 @@
+<div class="step-ai">
+  <p class="step-desc">Connect an AI provider to power keyword expansion, subject detection, and content scoring.</p>
+
+  <!-- Provider Selection -->
+  <div class="provider-cards">
+    @for (provider of providers; track provider.id) {
+      <button
+        class="provider-card"
+        [class.selected]="selectedProvider() === provider.id"
+        (click)="onProviderChange(provider.id)"
+      >
+        <span class="provider-icon">{{ provider.icon }}</span>
+        <span class="provider-name">{{ provider.name }}</span>
+        <span class="provider-desc">{{ provider.description }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Provider-specific settings -->
+  <div class="provider-config">
+    @if (selectedProvider() === 'ollama') {
+      <div class="form-group">
+        <label>Ollama Endpoint</label>
+        <input
+          type="text"
+          [ngModel]="ollamaEndpoint()"
+          (ngModelChange)="ollamaEndpoint.set($event)"
+          placeholder="http://localhost:11434"
+        />
+        <span class="form-hint">URL where Ollama is running</span>
+      </div>
+    }
+
+    @if (selectedProvider() === 'claude') {
+      <div class="form-group">
+        <label>Claude API Key</label>
+        <input
+          type="password"
+          [ngModel]="claudeApiKey()"
+          (ngModelChange)="onApiKeyChange($event)"
+          placeholder="sk-ant-..."
+        />
+        <span class="form-hint">Get your key at console.anthropic.com</span>
+      </div>
+    }
+
+    @if (selectedProvider() === 'openai') {
+      <div class="form-group">
+        <label>OpenAI API Key</label>
+        <input
+          type="password"
+          [ngModel]="openaiApiKey()"
+          (ngModelChange)="onApiKeyChange($event)"
+          placeholder="sk-..."
+        />
+        <span class="form-hint">Get your key at platform.openai.com</span>
+      </div>
+    }
+
+    <!-- Model selection -->
+    <div class="form-group">
+      <label>Model {{ loadingModels() ? '(loading...)' : '' }}</label>
+      <select [ngModel]="selectedModel()" (ngModelChange)="selectedModel.set($event)">
+        @for (model of availableModels(); track model) {
+          <option [value]="model">{{ model }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Test connection -->
+  <div class="test-row">
+    <button
+      class="test-btn"
+      [disabled]="testing()"
+      (click)="testConnection()"
+    >
+      {{ testing() ? 'Testing...' : 'Test Connection' }}
+    </button>
+
+    @if (testResult()) {
+      <div
+        class="test-result"
+        [class.success]="testResult()!.success"
+        [class.error]="!testResult()!.success"
+      >
+        @if (testResult()!.success) {
+          <span>Connection successful!</span>
+        } @else {
+          <span>Failed: {{ testResult()!.error }}</span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="step-actions">
+    <desktop-button variant="ghost" (click)="back.emit()">Back</desktop-button>
+    <desktop-button
+      variant="primary"
+      [disabled]="!testPassed()"
+      [loading]="saving()"
+      (click)="proceed()"
+    >
+      Next: Expand Keywords
+    </desktop-button>
+  </div>
+</div>
