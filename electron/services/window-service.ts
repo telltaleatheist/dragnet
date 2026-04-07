@@ -47,12 +47,15 @@ export class WindowService {
 
     // Dev tools disabled by default — open manually with Cmd+Option+I if needed
 
-    this.mainWindow.on('close', (event) => {
-      if (!this.isQuitting) {
-        event.preventDefault();
-        this.mainWindow?.hide();
-      }
-    });
+    // macOS: hide to dock on close. Windows/Linux: quit normally.
+    if (process.platform === 'darwin') {
+      this.mainWindow.on('close', (event) => {
+        if (!this.isQuitting) {
+          event.preventDefault();
+          this.mainWindow?.hide();
+        }
+      });
+    }
 
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;
