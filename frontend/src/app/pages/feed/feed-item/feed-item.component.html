@@ -2,6 +2,7 @@
   class="feed-item"
   [class.opened]="item.opened"
   [class.bookmarked]="item.bookmarked"
+  (contextmenu)="onContextMenu($event)"
 >
   <!-- Score badge -->
   <div class="item-score" [ngClass]="scoreClass">
@@ -65,4 +66,12 @@
       ✕
     </button>
   </div>
+
+  <desktop-context-menu
+    [visible]="contextMenuVisible"
+    [position]="contextMenuPosition"
+    [actions]="contextMenuActions"
+    (actionSelected)="onContextMenuAction($event)"
+    (closed)="contextMenuVisible = false"
+  />
 </div>

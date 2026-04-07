@@ -1,11 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FeedItem } from '../../../models/feed.model';
+import { ContextMenuComponent } from '../../../creamsicle-desktop/components/context-menu/context-menu.component';
+import { ContextMenuAction, ContextMenuPosition } from '../../../creamsicle-desktop/models/cascade.model';
 
 @Component({
   selector: 'app-feed-item',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ContextMenuComponent],
   templateUrl: './feed-item.component.html',
   styleUrl: './feed-item.component.scss',
 })
@@ -14,6 +16,44 @@ export class FeedItemComponent {
   @Output() dismiss = new EventEmitter<void>();
   @Output() bookmark = new EventEmitter<void>();
   @Output() open = new EventEmitter<void>();
+
+  contextMenuVisible = false;
+  contextMenuPosition: ContextMenuPosition = { x: 0, y: 0 };
+
+  get contextMenuActions(): ContextMenuAction[] {
+    return [
+      { label: 'Copy Link', icon: '🔗', action: 'copy-link' },
+      { label: 'Open in Browser', icon: '↗', action: 'open' },
+      { label: '', icon: '', action: '', divider: true },
+      { label: this.item.bookmarked ? 'Remove Bookmark' : 'Bookmark', icon: this.item.bookmarked ? '★' : '☆', action: 'bookmark' },
+      { label: 'Dismiss', icon: '✕', action: 'dismiss' },
+    ];
+  }
+
+  onContextMenu(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuPosition = { x: event.clientX, y: event.clientY };
+    this.contextMenuVisible = true;
+  }
+
+  onContextMenuAction(action: string) {
+    this.contextMenuVisible = false;
+    switch (action) {
+      case 'copy-link':
+        navigator.clipboard.writeText(this.item.url);
+        break;
+      case 'open':
+        this.open.emit();
+        break;
+      case 'bookmark':
+        this.bookmark.emit();
+        break;
+      case 'dismiss':
+        this.dismiss.emit();
+        break;
+    }
+  }
 
   get platformIcon(): string {
     switch (this.item.platform) {

@@ -17,23 +17,30 @@ export function buildKeywordExpansionPrompt(seedKeywords: string[]): string {
 
 SEED KEYWORDS: ${seedKeywords.join(', ')}
 
-CRITICAL: Each keyword you generate will be used as a STANDALONE search query sent individually to Reddit, TikTok, Google News, YouTube, Twitter, etc. A bare generic term like "artemis" or "vaccine" will surface mainstream results — useless for a niche reading interest. Every keyword must be specific enough ON ITS OWN to surface the community and angle the user cares about, not tangentially-related mainstream noise.
+CRITICAL: Each keyword will be used as a search query on Reddit, TikTok, Google News, YouTube, and Twitter. On these platforms, spaces are treated as AND — so a 2-word keyword finds posts containing BOTH words (the intersection), and a 4+ word keyword requires ALL words present, matching almost nothing.
 
-GOOD examples (specific compound terms that work as standalone queries):
-- For a flat-earth-interest profile: "flat earth artemis", "nasa firmament", "space is fake", "flat earth dave", "globe earth hoax"
-- For a vaccine-skeptic-interest profile: "vaccine injury", "mrna shedding", "covid jab deaths", "vaers underreporting"
-- For a crypto-skeptic-interest profile: "crypto ponzi", "bitcoin energy waste", "nft scam", "rugpull crypto"
+This AND behavior is the KEY TOOL for finding intersections: "flat earth artemis" finds flat earthers reacting to the Artemis launch — not flat earth content in general and not Artemis coverage in general. Use 2-3 word compound terms to capture these intersections.
 
-BAD examples (too generic — will return mainstream results):
-- "artemis", "nasa", "space", "vaccine", "covid", "crypto", "bitcoin"
+GOOD examples (2-3 word compounds that capture specific intersections):
+- For a flat-earth profile: "flat earth artemis", "nasa firmament", "globe earth hoax", "flat earth dave", "space is fake"
+- For a vaccine-skeptic profile: "vaccine injury", "mrna shedding", "vaers underreporting", "jab deaths"
+- For a crypto-skeptic profile: "crypto ponzi", "bitcoin energy", "nft scam", "rugpull crypto"
+
+BAD examples (4+ words — AND of all words matches almost nothing on Reddit):
+- "cult deprogramming exit counseling", "christian nationalism american identity", "qanon conspiracy theory debunked"
+
+BAD examples (single generic words — returns mainstream noise, loses the niche angle):
+- "artemis", "nasa", "space", "vaccine", "covid", "crypto"
+
+BAD examples (split into separate keywords — loses the intersection):
+- "flat earth" and "artemis" as two separate keywords — searches run independently, returning flat earth content and NASA content but NOT flat earthers reacting to Artemis
 
 Generate 30-60 expanded keywords that include:
-- Compound terms pairing the niche angle with broader topics (e.g. "flat earth nasa" not just "nasa")
-- Specific people by full name (e.g. "flat earth dave" not "dave")
-- Community-specific slang, hashtags, and phrases that the user would recognize
-- Subreddit, channel, and community names unique to this space
-- Alternative terminology the community uses for mainstream concepts
-- Both insider and critic vocabulary, but keep each term self-disambiguating
+- 2-3 word compound terms that capture specific intersections between the user's niche and broader topics/events
+- Specific people by full name (e.g. "flat earth dave")
+- Community slang, hashtags, and phrases people actually use on social media
+- Alternative terminology the community uses
+- Both insider and critic vocabulary
 
 Respond with ONLY valid JSON in this exact format:
 {
@@ -41,7 +48,7 @@ Respond with ONLY valid JSON in this exact format:
   "reasoning": ["why keyword1 was added", "why keyword2 was added", ...]
 }
 
-Each keyword should be lowercase. Multi-word terms are expected and encouraged. Do NOT include the original seed keywords in the expanded list. Do NOT include bare generic terms that would match mainstream content unrelated to the user's angle.`;
+Each keyword should be lowercase, 2-3 words preferred (1 word OK if specific like "groyper"). Do NOT include the original seed keywords. Do NOT include bare generic terms. Do NOT use 4+ word phrases.`;
 }
 
 export function buildSubjectDerivationPrompt(keywords: string[]): string {
@@ -49,15 +56,17 @@ export function buildSubjectDerivationPrompt(keywords: string[]): string {
 
 KEYWORDS: ${keywords.join(', ')}
 
-CRITICAL: The \`keywords\` array inside each subject will be used as STANDALONE search queries sent individually to Reddit, TikTok, Google News, YouTube, Twitter, etc. Each keyword must be specific enough ON ITS OWN to surface the content the user cares about, not mainstream noise. A bare term like "artemis" or "vaccine" will return mainstream results that are irrelevant to a niche interest.
+CRITICAL: The \`keywords\` array inside each subject will be used as search queries on Reddit, TikTok, Google News, YouTube, and Twitter. On these platforms, spaces = AND, so 2-3 word compounds find the intersection (good), but 4+ word phrases require ALL words present and match nothing (bad).
 
 When assigning keywords to subjects:
-- ONLY use compound/specific terms from the list that can stand alone as queries (e.g. "flat earth artemis", "vaccine injury", "crypto ponzi")
-- NEVER include bare generic terms (e.g. "artemis", "vaccine", "crypto", "bitcoin") even if they appear in the list — skip them
-- Each subject's keywords should each independently return content relevant to that subject when searched
+- Use 2-3 word compound terms that capture specific intersections (e.g. "flat earth artemis" finds flat earthers reacting to Artemis)
+- 1-word terms OK only if specific enough on their own (e.g. "groyper", "dominionism")
+- NEVER use 4+ word phrases — they fail on Reddit/TikTok
+- NEVER include bare generic terms (e.g. "vaccine", "crypto") — too much noise
+- NEVER split a compound concept into separate keywords — "flat earth" and "artemis" as two keywords loses the intersection
 
 Derive:
-1. **5-15 subject areas** — broad categories that group related keywords. Each subject needs an id (snake_case), label, a hex color, 4-12 relevant STANDALONE-WORTHY keywords from the list, and a priority (1=highest, 3=lowest).
+1. **5-15 subject areas** — broad categories that group related keywords. Each subject needs an id (snake_case), label, a hex color, 4-12 relevant keywords (1-3 words each) from the list, and a priority (1=highest, 3=lowest).
 2. **10-40 key public figures** — specific people the user will want to follow. Each figure needs their full name, aliases (public social media handles, commonly-used nicknames), a tier (top_priority, high_priority, or monitor), and which subject IDs they belong to. Include public commentators, journalists, creators, organization heads, and notable community members relevant to these topics.
 
 Respond with ONLY valid JSON in this exact format:
@@ -67,7 +76,7 @@ Respond with ONLY valid JSON in this exact format:
       "id": "topic_name",
       "label": "Topic Name",
       "color": "#e74c3c",
-      "keywords": ["compound keyword 1", "compound keyword 2"],
+      "keywords": ["short keyword", "two words"],
       "enabled": true,
       "priority": 1
     }
@@ -82,7 +91,7 @@ Respond with ONLY valid JSON in this exact format:
   ]
 }
 
-Use distinct, visually separable colors for subjects. Prioritize figures who are most active publicly and produce the most relevant content. If a keyword is too generic to work as a standalone query, do NOT include it in any subject's keywords array.`;
+Use distinct, visually separable colors for subjects. Prioritize figures who are most active publicly and produce the most relevant content. Every keyword must be 1-3 words — no longer. If a keyword is too generic to work as a standalone query, do NOT include it.`;
 }
 
 export function buildSourceDiscoveryPrompt(

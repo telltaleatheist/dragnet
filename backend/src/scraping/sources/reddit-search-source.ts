@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BaseSource, RawContentItem } from './base-source';
+import { BaseSource, RawContentItem, randomUserAgent, jitteredDelay } from './base-source';
 import type { DiscoverySourceConfig, SubjectProfile, FigureProfile } from '../../../../shared/types';
 
 interface RedditSearchConfig extends DiscoverySourceConfig {
@@ -34,78 +34,81 @@ export class RedditSearchSource extends BaseSource {
   protected readonly logger = new Logger(RedditSearchSource.name);
   readonly platform = 'reddit';
 
+  private blocked = false;
+
   async fetch(config: RedditSearchConfig): Promise<RawContentItem[]> {
     if (!config.enabled) return [];
+    this.blocked = false;
 
     const queries = this.buildQueries(config.subjects, config.figures);
     const items: RawContentItem[] = [];
 
     for (const query of queries) {
+      if (this.blocked) {
+        this.logger.warn('Reddit IP blocked — skipping remaining queries');
+        break;
+      }
+
       try {
-        if (config.videoOnly) {
-          const results = await this.searchRedditVideoOnly(query);
-          items.push(...results);
-        } else {
-          const results = await this.searchReddit(query);
-          items.push(...results);
-        }
+        const results = await this.searchReddit(query);
+        items.push(...results);
       } catch (err) {
         this.logger.warn(`Reddit search "${query}" failed: ${(err as Error).message}`);
       }
 
-      // 2.5s delay between queries to avoid Reddit 429 rate limits
-      await new Promise((r) => setTimeout(r, 2500));
+      // 5s delay (±30% jitter) between queries to avoid Reddit rate limits
+      await jitteredDelay(5000);
+    }
+
+    // Video-only filtering happens here — searchReddit always fetches all content types
+    if (config.videoOnly) {
+      const videos = items.filter((item) => item.contentType === 'video');
+      this.logger.log(`Reddit search: ${items.length} total, ${videos.length} videos (video-only mode)`);
+      return videos;
     }
 
     return items;
   }
 
   private buildQueries(subjects: SubjectProfile[], figures: FigureProfile[]): string[] {
-    // Combine all keywords + figures into one big OR query.
-    // Reddit search handles long OR chains fine and this avoids rate limiting.
-    const allTerms: string[] = [];
+    const queries: string[] = [];
 
+    // One query per enabled subject. Reddit search treats spaces as AND,
+    // so multi-word keywords like "cult deprogramming exit counseling"
+    // require ALL words present — matching almost nothing. Only use
+    // short keywords (≤3 words) and always include the subject label.
     for (const subject of subjects) {
       if (!subject.enabled) continue;
 
-      const usable = subject.keywords
-        .filter((kw) => !kw.startsWith('#') && kw.length >= 4)
-        .slice(0, 5);
+      const terms: string[] = [subject.label];
 
-      for (const kw of usable) {
-        const term = kw.includes(' ') ? `"${kw}"` : kw;
-        if (!allTerms.includes(term)) allTerms.push(term);
+      for (const kw of subject.keywords) {
+        if (kw.startsWith('#') || kw.length < 4) continue;
+        const wordCount = kw.trim().split(/\s+/).length;
+        if (wordCount <= 3) terms.push(kw);
+      }
+
+      // Deduplicate (case-insensitive) and cap at 8 terms
+      const seen = new Set<string>();
+      const unique = terms.filter((t) => {
+        const lower = t.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      }).slice(0, 8);
+
+      if (unique.length > 0) {
+        queries.push(unique.join(' OR '));
       }
     }
 
-    for (const figure of figures) {
-      if (figure.tier === 'top_priority') {
-        const name = figure.name.includes(' ') ? `"${figure.name}"` : figure.name;
-        if (!allTerms.includes(name)) allTerms.push(name);
-      }
-    }
+    // Group top_priority figures 5 per query, quoted for exact name matching.
+    const topFigures = figures
+      .filter((f) => f.tier === 'top_priority')
+      .map((f) => `"${f.name}"`);
 
-    if (allTerms.length === 0) return [];
-
-    // Reddit URL length limit is ~8000 chars. Split into chunks if needed.
-    const queries: string[] = [];
-    let current: string[] = [];
-    let currentLen = 0;
-
-    for (const term of allTerms) {
-      // " OR " is 4 chars
-      const addition = current.length === 0 ? term.length : term.length + 4;
-      if (currentLen + addition > 1500 && current.length > 0) {
-        queries.push(current.join(' OR '));
-        current = [term];
-        currentLen = term.length;
-      } else {
-        current.push(term);
-        currentLen += addition;
-      }
-    }
-    if (current.length > 0) {
-      queries.push(current.join(' OR '));
+    for (let i = 0; i < topFigures.length; i += 5) {
+      queries.push(topFigures.slice(i, i + 5).join(' OR '));
     }
 
     return queries;
@@ -113,78 +116,65 @@ export class RedditSearchSource extends BaseSource {
 
   private async searchReddit(query: string): Promise<RawContentItem[]> {
     const encoded = encodeURIComponent(query);
-    const url = `https://www.reddit.com/search.json?q=${encoded}&sort=new&t=week&limit=25`;
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-      },
-    });
+    // Two passes: relevance (balances recency + engagement) and top/day (viral posts)
+    const urls = [
+      `https://www.reddit.com/search.json?q=${encoded}&sort=relevance&t=week&limit=100`,
+      `https://www.reddit.com/search.json?q=${encoded}&sort=top&t=day&limit=100`,
+    ];
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for reddit search "${query}"`);
-    }
+    const seen = new Set<string>();
+    const items: RawContentItem[] = [];
 
-    const json = await response.json();
-    const children: RedditSearchChild[] = json?.data?.children || [];
-
-    return children
-      .filter((child) => {
-        if (!child.data?.permalink) return false;
-        // Filter out Reddit ads/promoted posts
-        if (child.data.promoted || child.data.is_promoted) return false;
-        if (child.kind && child.kind !== 't3') return false;
-        return true;
-      })
-      .map((child) => this.parseChild(child, query));
-  }
-
-  /** Fetch 3 pages of normal Reddit results, then filter to video posts only. */
-  private async searchRedditVideoOnly(query: string): Promise<RawContentItem[]> {
-    const allItems: RawContentItem[] = [];
-    let after: string | null = null;
-    const maxPages = 3;
-
-    for (let page = 0; page < maxPages; page++) {
-      const encoded = encodeURIComponent(query);
-      let url = `https://www.reddit.com/search.json?q=${encoded}&sort=new&t=week&limit=50`;
-      if (after) url += `&after=${after}`;
+    for (const url of urls) {
+      if (this.blocked) break;
 
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'User-Agent': randomUserAgent(),
           'Accept': 'application/json',
         },
       });
 
+      // Detect IP block: 429, 403, or HTML response (Reddit returns login page)
+      if (response.status === 429 || response.status === 403) {
+        this.logger.warn(`Reddit returned ${response.status} — IP likely blocked`);
+        this.blocked = true;
+        break;
+      }
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for reddit video search "${query}" page ${page}`);
+        this.logger.warn(`HTTP ${response.status} for reddit search "${query}" (${url.includes('sort=top') ? 'top' : 'relevance'})`);
+        continue;
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        this.logger.warn('Reddit returned HTML instead of JSON — IP likely blocked');
+        this.blocked = true;
+        break;
       }
 
       const json = await response.json();
       const children: RedditSearchChild[] = json?.data?.children || [];
-      after = json?.data?.after || null;
 
-      const validPosts = children.filter((child) => {
-        if (!child.data?.permalink) return false;
-        if (child.data.promoted || child.data.is_promoted) return false;
-        if (child.kind && child.kind !== 't3') return false;
-        return true;
-      });
-
-      for (const child of validPosts) {
-        allItems.push(this.parseChild(child, query));
+      for (const child of children) {
+        if (!child.data?.permalink) continue;
+        if (child.data.promoted || child.data.is_promoted) continue;
+        if (child.kind && child.kind !== 't3') continue;
+        if (seen.has(child.data.permalink)) continue;
+        seen.add(child.data.permalink);
+        items.push(this.parseChild(child, query));
       }
 
-      if (!after) break;
-      await new Promise((r) => setTimeout(r, 2000));
+      // 3s delay (±30% jitter) between passes
+      if (url !== urls[urls.length - 1]) {
+        await jitteredDelay(3000);
+      }
     }
 
-    // Filter to video posts
-    const videos = allItems.filter((item) => item.contentType === 'video');
-    this.logger.log(`Reddit video search "${query}": ${allItems.length} total, ${videos.length} videos`);
-    return videos;
+    this.logger.log(`Reddit search "${query}": ${items.length} unique results (2 passes)`);
+    return items;
   }
 
   private parseChild(child: RedditSearchChild, query: string): RawContentItem {

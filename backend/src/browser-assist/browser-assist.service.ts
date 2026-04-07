@@ -30,10 +30,12 @@ export class BrowserAssistService {
     const subjects = config.subjects.map((s) => s.label).join(', ');
     const figures = config.figures.map((f) => f.name).join(', ');
     const extra = searchTerms?.length ? searchTerms.join(', ') : '';
+    const twitterAccounts = config.sources.twitter?.accounts || [];
+    const subreddits = config.sources.reddit?.subreddits || [];
 
     const prompts = platforms.map((platform) => ({
       platform,
-      prompt: this.buildPrompt(platform, subjects, figures, extra, !!videoOnly, !!adversarial, maxAgeDays),
+      prompt: this.buildPrompt(platform, subjects, figures, extra, !!videoOnly, !!adversarial, maxAgeDays, twitterAccounts, subreddits),
     }));
 
     return { prompts };
@@ -134,7 +136,11 @@ export class BrowserAssistService {
 
   // --- Private helpers ---
 
-  private buildPrompt(platform: string, subjects: string, figures: string, searchTerms: string, videoOnly: boolean, adversarial: boolean, maxAgeDays?: number): string {
+  private buildPrompt(
+    platform: string, subjects: string, figures: string, searchTerms: string,
+    videoOnly: boolean, adversarial: boolean, maxAgeDays?: number,
+    twitterAccounts: string[] = [], subreddits: string[] = [],
+  ): string {
     // When search terms exist (from Advanced Search), they're the primary focus.
     // Profile subjects/figures become background context.
     let intro: string;
@@ -167,13 +173,26 @@ export class BrowserAssistService {
     const preamble = `${intro}${adversarialNote}${videoNote}${dateNote}`;
 
     switch (platform) {
-      case 'twitter':
-        return `${preamble}\n\nCan you help me find some recent examples on Twitter? ${format}\nhttps://x.com/... | brief description${formatSuffix}`;
+      case 'twitter': {
+        const accountLinks = twitterAccounts
+          .map((a) => `https://x.com/${a.replace(/^@/, '')}`)
+          .join('\n');
+        const accountNote = accountLinks
+          ? `\n\nThese are accounts I follow — a mix of watchdog/clipper accounts and primary sources. Please browse their recent posts and pull anything relevant to my topics. Some may be commentators who share clips or screenshots of others in their own words — that content is valuable too.\n${accountLinks}\n\nAlso search Twitter more broadly for other relevant posts beyond these accounts.`
+          : '';
+        const rateNote = `\n\nIMPORTANT: Twitter/X aggressively rate-limits automated browsing. To avoid getting my account temporarily locked, please pace your requests — wait a few seconds between page loads, don't rapid-fire through dozens of profiles, and don't use Twitter search excessively. It's better to get fewer good results than to trip the rate limiter. If you notice rate-limit errors or CAPTCHAs, stop immediately and return what you have so far.`;
+        return `${preamble}${accountNote}${rateNote}\n\nCan you help me find some recent examples on Twitter? ${format}\nhttps://x.com/... | brief description${formatSuffix}`;
+      }
 
-      case 'reddit':
+      case 'reddit': {
+        const subList = subreddits.map((s) => `r/${s}`).join(', ');
+        const subNote = subList
+          ? `\n\nPlease check these subreddits specifically: ${subList}`
+          : '';
         return adversarial
-          ? `${preamble}\n\nCan you help me browse Reddit for discussions within these communities? I'm looking for subreddits where these ideas are discussed seriously.\n\n${format}\nhttps://reddit.com/... | brief description${formatSuffix}`
-          : `${preamble}\n\nCan you help me browse Reddit for recent discussions about these topics? Subreddits like r/conspiracy, r/DebunkThis, and related communities would be great places to check.\n\n${format}\nhttps://reddit.com/... | brief description${formatSuffix}`;
+          ? `${preamble}${subNote}\n\nCan you help me browse Reddit for discussions within these communities? I'm looking for subreddits where these ideas are discussed seriously.\n\n${format}\nhttps://reddit.com/... | brief description${formatSuffix}`
+          : `${preamble}${subNote}\n\nCan you help me browse Reddit for recent discussions about these topics?\n\n${format}\nhttps://reddit.com/... | brief description${formatSuffix}`;
+      }
 
       case 'youtube':
         return `${preamble}\n\nCan you help me find some recent YouTube videos about these topics?\n\n${format}\nhttps://youtube.com/... | brief description${formatSuffix}`;

@@ -157,18 +157,15 @@ export class ContextMenuComponent implements AfterViewInit, OnChanges {
   }
 
   private adjustPosition() {
-    if (!this.visible) {
-      this.adjustedPosition = this.position;
-      return;
-    }
+    // Set position immediately so the menu never renders at a stale location
+    this.adjustedPosition = this.position;
 
-    // Delay to allow DOM to render
+    if (!this.visible) return;
+
+    // After DOM renders, refine position to avoid viewport overflow
     setTimeout(() => {
       const menu = this.elementRef.nativeElement.querySelector('.context-menu');
-      if (!menu) {
-        this.adjustedPosition = this.position;
-        return;
-      }
+      if (!menu) return;
 
       const rect = menu.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
@@ -177,17 +174,13 @@ export class ContextMenuComponent implements AfterViewInit, OnChanges {
       let x = this.position.x;
       let y = this.position.y;
 
-      // Adjust if menu would overflow right edge
       if (x + rect.width > viewportWidth - 8) {
         x = viewportWidth - rect.width - 8;
       }
-
-      // Adjust if menu would overflow bottom edge
       if (y + rect.height > viewportHeight - 8) {
         y = viewportHeight - rect.height - 8;
       }
 
-      // Ensure minimum position
       x = Math.max(8, x);
       y = Math.max(8, y);
 

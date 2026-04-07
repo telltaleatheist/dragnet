@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BaseSource, RawContentItem } from './base-source';
+import { BaseSource, RawContentItem, randomUserAgent, jitteredDelay } from './base-source';
 import type { RedditSourceConfig } from '../../../../shared/types';
 
 interface RedditRssEntry {
@@ -62,8 +62,8 @@ export class RedditSource extends BaseSource {
             break;
           }
         }
-        // Small delay between requests to avoid rate limiting
-        await new Promise((r) => setTimeout(r, 500));
+        // Delay between requests to avoid rate limiting (1.5s ± jitter)
+        await jitteredDelay(1500);
       }
     }
 
@@ -92,7 +92,7 @@ export class RedditSource extends BaseSource {
       : `https://www.reddit.com/r/${subreddit}/${feedType}.rss`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'User-Agent': randomUserAgent(),
         'Accept': 'application/rss+xml, application/xml, text/xml, */*',
       },
     });

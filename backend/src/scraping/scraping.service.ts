@@ -14,7 +14,7 @@ import { InstagramDiscoverySource } from './sources/instagram-discovery-source';
 import { SubstackDiscoverySource } from './sources/substack-discovery-source';
 import { TwitterDiscoverySource } from './sources/twitter-discovery-source';
 import { YouTubeShortsDiscoverySource } from './sources/youtube-shorts-discovery-source';
-import { BaseSource } from './sources/base-source';
+import { BaseSource, isLikelyEnglish } from './sources/base-source';
 import { ScoringService } from '../scoring/scoring.service';
 import { AIProviderService, AIProviderConfig } from '../scoring/ai-provider.service';
 import { ExpansionPromptService } from '../scoring/expansion-prompt.service';
@@ -404,7 +404,13 @@ Score LOWER for neutral, balanced, or promotional mainstream coverage. The user 
             this.logger.log(`Expansion ${task.name}: filtered ${freshNew.length - relevant.length} irrelevant items`);
           }
 
-          const contentItems: ContentItem[] = relevant.map((raw) => ({
+          // Language filter
+          const englishOnly = relevant.filter((item) => isLikelyEnglish(item.title));
+          if (englishOnly.length < relevant.length) {
+            this.logger.log(`Expansion ${task.name}: filtered ${relevant.length - englishOnly.length} non-English items`);
+          }
+
+          const contentItems: ContentItem[] = englishOnly.map((raw) => ({
             id: '',
             url: raw.url,
             title: raw.title,
@@ -630,13 +636,19 @@ Return ONLY a JSON array of strings.`;
               : limited;
 
             // Date filter
-            const filtered = maxAgeDays
+            const dateFiltered = maxAgeDays
               ? videoFiltered.filter((item) => {
                   if (!item.publishedAt) return true;
                   const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000);
                   return new Date(item.publishedAt) >= cutoff;
                 })
               : videoFiltered;
+
+            // Language filter
+            const filtered = dateFiltered.filter((item) => isLikelyEnglish(item.title));
+            if (filtered.length < dateFiltered.length) {
+              this.logger.log(`QuickSearch ${task.name}: filtered ${dateFiltered.length - filtered.length} non-English items`);
+            }
 
             const contentItems: ContentItem[] = filtered.map((raw) => ({
               id: '',
@@ -943,11 +955,17 @@ Return ONLY a JSON array of search term strings.`;
             }
 
             // Video-only mode: keep only video content (twitter exempt — can't detect video)
-            const finalFiltered = (videoOnly && task.platform !== 'twitter')
+            const videoFiltered2 = (videoOnly && task.platform !== 'twitter')
               ? filtered.filter((item) => item.contentType === 'video')
               : filtered;
 
-            const contentItems: ContentItem[] = finalFiltered.map((raw) => ({
+            // Language filter: drop items with non-English titles
+            const langFiltered = videoFiltered2.filter((item) => isLikelyEnglish(item.title));
+            if (langFiltered.length < videoFiltered2.length) {
+              this.logger.log(`${task.name}: filtered ${videoFiltered2.length - langFiltered.length} non-English items`);
+            }
+
+            const contentItems: ContentItem[] = langFiltered.map((raw) => ({
               id: '',
               url: raw.url,
               title: raw.title,
