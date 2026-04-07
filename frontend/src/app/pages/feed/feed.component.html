@@ -23,7 +23,7 @@
           <input
             type="text"
             class="search-input"
-            placeholder="Search items..."
+            placeholder="Filter items..."
             [ngModel]="store.filters().search || ''"
             (ngModelChange)="store.updateFilters({ search: $event || undefined })"
           />

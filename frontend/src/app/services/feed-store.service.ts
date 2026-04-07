@@ -556,7 +556,9 @@ export class FeedStoreService {
     if (this.curateRunning() || this.searchRunning()) return;
     if (!query.trim()) return;
     this.searchRunning.set(true);
-    this.api.triggerQuickSearch(query.trim(), false, this.videoOnly(), this.adversarial(), this.dateFilter() ?? undefined).subscribe({
+    // Quick search is intentionally simple: no AI expansion, no adversarial.
+    // Just the user's query sent verbatim to all discovery sources.
+    this.api.triggerQuickSearch(query.trim(), false, this.videoOnly(), false, this.dateFilter() ?? undefined).subscribe({
       error: (err) => {
         this.searchRunning.set(false);
         console.error('Failed to trigger quick search:', err);

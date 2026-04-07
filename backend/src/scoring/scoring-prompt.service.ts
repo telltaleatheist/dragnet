@@ -92,7 +92,9 @@ export class ScoringPromptService {
 
     const itemLines = items.map((item) => {
       const nsfwFlag = (item.metadata as any)?.nsfw ? ' [NSFW]' : '';
-      return `${item.id} | ${item.platform} | ${item.title}${nsfwFlag}`;
+      const typeTag = item.contentType === 'video' ? ' [VIDEO]' : '';
+      const source = item.sourceAccount ? ` | ${item.sourceAccount}` : '';
+      return `${item.id} | ${item.platform}${source} | ${item.title}${typeTag}${nsfwFlag}`;
     }).join('\n');
 
     const instructions = customInstructions?.trim() || config.scoring.editorialNotes?.trim();
@@ -106,7 +108,7 @@ export class ScoringPromptService {
 
 Identify which items are relevant, interesting, or newsworthy in relation to "${searchQuery}". Be INCLUSIVE — if there's a reasonable chance an item is relevant to the search topic, include it. Only filter out items that are clearly unrelated noise or generic/banal content with no informational value.
 ${instructionsBlock}
-ITEMS (${items.length} — format: ID | platform | title):
+ITEMS (${items.length} — format: ID | platform | source | title):
 ${itemLines}
 
 ${TRIAGE_RESPONSE_FORMAT}`;
@@ -124,7 +126,9 @@ ${subjectList}
 KEY FIGURES:
 ${figureList}
 ${editorialVoice}${instructionsBlock}
-ITEMS (${items.length} — format: ID | platform | title):
+IMPORTANT: Items posted directly from a tracked figure's own account/channel (check the "source" column) should almost always be included — their own output is primary-source material even when the title looks generic.
+
+ITEMS (${items.length} — format: ID | platform | source | title):
 ${itemLines}
 
 ${TRIAGE_RESPONSE_FORMAT}`;
@@ -295,11 +299,15 @@ ${classifyFormat}`;
       : '';
 
     const editorialVoice = this.buildEditorialVoiceBlock();
+    const figureList = this.buildTieredFigures();
 
     return `${CLASSIFY_SYSTEM}
 
 SUBJECT AREAS:
 ${subjectDescriptions}
+
+KEY FIGURES TO WATCH:
+${figureList}
 
 ${SCORING_HIGH}
 

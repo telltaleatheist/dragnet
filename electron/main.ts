@@ -4,6 +4,7 @@ import { AppConfig } from './config/app-config';
 import { WindowService } from './services/window-service';
 import { BackendService } from './services/backend-service';
 import { setupIpcHandlers } from './ipc/ipc-handlers';
+import { initLogging } from './services/log-service';
 
 let windowService: WindowService;
 let backendService: BackendService;
@@ -55,6 +56,7 @@ try {
 app.whenReady().then(async () => {
   try {
     AppConfig.initialize();
+    initLogging();
 
     backendService = new BackendService();
     windowService = new WindowService();

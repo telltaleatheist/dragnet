@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
+import { getDataDir } from '../utils/app-paths';
 import { DEFAULT_CONFIG } from './default-config';
 import { ProfileService } from '../profile/profile.service';
 
@@ -228,15 +228,8 @@ export class DragnetConfigService implements OnModuleInit {
     }
   }
 
-  private getConfigDir(): string {
-    if (process.platform === 'darwin') {
-      return path.join(os.homedir(), 'Library', 'Application Support', 'dragnet');
-    }
-    return path.join(os.homedir(), '.dragnet');
-  }
-
   private getConfigPath(): string {
-    return path.join(this.getConfigDir(), 'dragnet.config.json');
+    return path.join(getDataDir(), 'dragnet.config.json');
   }
 
   private mergeWithDefaults(loaded: Partial<DragnetConfig>): DragnetConfig {

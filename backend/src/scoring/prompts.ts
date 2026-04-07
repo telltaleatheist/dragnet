@@ -137,7 +137,8 @@ THE HEADLINE TEST: Could you write ONE specific headline that accurately covers 
 
 CLUSTER COUNT TARGET: {{TARGET_CLUSTER_COUNT}}. Quality over quantity — only genuinely interesting, well-defined stories deserve a cluster. If fewer stories are compelling, produce fewer clusters. Don't pad.
 
-- A single item scoring 9-10 that represents a major breaking development can be a standalone cluster
+- A single item scoring 8+ can and should be a standalone cluster when it's genuinely interesting — a notable statement, confrontation, or piece of content from a tracked figure does NOT need other items covering the same thing to qualify. One great clip is a story.
+- AVOID VOLUME BIAS: do not over-cluster a single figure just because they produced many items. Three repetitive posts from the same commentator saying similar things is at most ONE cluster (or zero, if the content is routine). Prefer surfacing a diverse range of interesting stories from different figures over stacking clusters around whoever was most prolific.
 - Do NOT create catch-all, thematic, or "miscellaneous" clusters
 - If an item doesn't tightly fit any cluster, LEAVE IT OUT of clusters (but still score it). Unclustered items are fine.
 - It is much better to have a few excellent clusters than many mediocre ones
@@ -174,7 +175,7 @@ RULES:
 - Score EVERY new item listed above
 - Assign items to existing clusters ONLY if they're about the EXACT same specific story — same person, same event, same incident
 - An item about a DIFFERENT person doing a DIFFERENT thing is NOT the same story, even if the subject/topic is similar
-- Create new clusters only for genuinely interesting new stories (requires 2+ items, unless 9-10 score)
+- Create new clusters for genuinely interesting new stories. A single item scoring 8+ from a tracked figure or on a tracked subject can be a standalone cluster — do not require 2+ items.
 - Items that don't fit any cluster should be omitted from assignments/newClusters — this is fine and expected
 - If no items fit existing clusters, "assignments" can be empty
 - If no new clusters needed, "newClusters" can be empty
@@ -209,7 +210,8 @@ SELF-CHECK: Before finalizing each cluster, verify: "Could I write ONE specific 
 
 export const CLUSTERING_OTHER_RULES = `OTHER RULES:
 - Each cluster gets a headline-style title and 1-2 sentence summary
-- A cluster should have at least 2 items unless a single item scores 8+ and represents a clear standalone story
+- Clusters can be ANY size, including a single item, when that item is genuinely interesting on its own (8+ score, notable figure, unique angle). A strong standalone clip deserves its own cluster.
+- AVOID VOLUME BIAS: do not stack clusters around a single high-output figure at the expense of diversity. Repetitive content from one commentator is at most one cluster; prefer surfacing interesting material from a wider range of figures.
 - Do NOT create a "Miscellaneous" or catch-all cluster. Items that don't fit a coherent story should be OMITTED entirely
 - It is BETTER to have fewer well-defined clusters than many fragmented ones
 - Merge related angles of the same story into one cluster rather than splitting by platform or minor framing differences

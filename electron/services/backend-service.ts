@@ -7,6 +7,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { AppConfig } from '../config/app-config';
 import { ServerConfig } from '../config/server-config';
 import { PortUtil } from '../utilities/port-util';
+import { getLogsDir } from './log-service';
 
 export class BackendService {
   private backendProcess: ChildProcess | null = null;
@@ -148,6 +149,7 @@ export class BackendService {
         RESOURCES_PATH: resourcesPath,
         PORT: this.actualBackendPort.toString(),
         NODE_ENV: process.env.NODE_ENV || 'production',
+        DRAGNET_LOG_DIR: getLogsDir(),
       };
 
       this.backendProcess = spawn(nodePath, [backendPath], {

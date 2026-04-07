@@ -38,6 +38,17 @@
           </a>
         </nav>
 
+        <div class="toolbar-search">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Quick search..."
+            [(ngModel)]="quickSearchQuery"
+            (keydown.enter)="runQuickSearch()"
+            [disabled]="feedStore.searchRunning() || feedStore.curateRunning() || feedStore.scanRunning()"
+          />
+        </div>
+
         <div class="toolbar-actions">
           <select
             class="date-filter"

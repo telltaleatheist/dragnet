@@ -122,7 +122,10 @@ export class BrowserAssistService {
       });
     }
 
-    const added = this.store.addItems(items, baStore.id);
+    // localDedup=true: only deduplicate within this BA store, not globally.
+    // The user explicitly chose these URLs — don't silently discard them just
+    // because the same URL appeared in a previous scan or search store.
+    const added = this.store.addItems(items, baStore.id, true);
     const skipped = items.length - added;
 
     this.logger.log(`Browser Assist import: ${added} added, ${skipped} skipped (dedup)`);

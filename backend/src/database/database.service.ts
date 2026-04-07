@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import Database from 'better-sqlite3';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as os from 'os';
+import { getDataDir } from '../utils/app-paths';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -33,23 +33,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   private getDbPath(): string {
-    const dir = this.getDataDir();
+    const dir = getDataDir();
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     return path.join(dir, 'dragnet.db');
-  }
-
-  private getDataDir(): string {
-    if (process.platform === 'darwin') {
-      return path.join(
-        os.homedir(),
-        'Library',
-        'Application Support',
-        'dragnet',
-      );
-    }
-    return path.join(os.homedir(), '.dragnet');
   }
 
   private initializeTables(): void {

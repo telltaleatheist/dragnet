@@ -38,6 +38,7 @@ export class App implements OnInit {
   themeService = inject(DesktopThemeService);
   feedStore = inject(FeedStoreService);
   profileService = inject(ProfileService);
+  quickSearchQuery = '';
 
   statusLeftItems = computed<StatusBarItem[]>(() => {
     const items: StatusBarItem[] = [
@@ -142,5 +143,12 @@ export class App implements OnInit {
 
   setDateFilter(value: number | null) {
     this.feedStore.dateFilter.set(value);
+  }
+
+  runQuickSearch() {
+    const q = this.quickSearchQuery.trim();
+    if (!q) return;
+    this.feedStore.triggerQuickSearch(q);
+    this.quickSearchQuery = '';
   }
 }

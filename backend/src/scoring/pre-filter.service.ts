@@ -74,10 +74,38 @@ export class PreFilterService {
   }
 
   filterForAI(items: ScoredItem[]): ScoredItem[] {
+    const config = this.configService.getConfig();
+
+    // Build a set of source accounts tied to tracked figures (by name or alias).
+    // Items from these sources bypass the keyword-match requirement — a
+    // Mike Lindell interview titled "Full Show" has no keywords but is still
+    // the exact thing the user is tracking.
+    const figureSourceTokens = new Set<string>();
+    for (const figure of config.figures) {
+      figureSourceTokens.add(figure.name.toLowerCase());
+      for (const alias of figure.aliases) {
+        figureSourceTokens.add(alias.toLowerCase().replace(/^@/, ''));
+      }
+    }
+
     return items.filter((item) => {
       if (item.scoredAt) return false;
       const result = this.scoreItem(item);
-      return result.score > 0;
+      if (result.score > 0) return true;
+
+      // Soft-keep: item has no keyword/figure substring match, but its source
+      // account is a tracked figure. Let the AI triage decide.
+      const sourceAccount = item.sourceAccount?.toLowerCase().replace(/^@/, '');
+      if (sourceAccount && figureSourceTokens.has(sourceAccount)) {
+        return true;
+      }
+      const author = item.author?.toLowerCase();
+      if (author) {
+        for (const token of figureSourceTokens) {
+          if (author.includes(token)) return true;
+        }
+      }
+      return false;
     });
   }
 }
