@@ -88,6 +88,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "frontend/dist/frontend/browser",
+        "to": "frontend/dist/frontend/browser"
       }
     ],
     "files": [
@@ -95,7 +99,7 @@
       "dist-electron/shared/**/*",
       "!dist-electron/**/*.map",
       "!backend/**",
-      "frontend/dist/frontend/browser/**/*",
+      "!frontend/**",
       "node_modules/**/*",
       "!**/node_modules/**/test/**",
       "!**/node_modules/**/tests/**",

@@ -11,7 +11,9 @@ export class AppConfig {
   }
 
   static get isDevelopment(): boolean {
-    return process.env.NODE_ENV !== 'production';
+    if (process.env.NODE_ENV === 'development') return true;
+    if (process.env.NODE_ENV === 'production') return false;
+    return !app.isPackaged;
   }
 
   static get projectRoot(): string {
@@ -33,7 +35,7 @@ export class AppConfig {
     if (this.isDevelopment) {
       return path.join(this.projectRoot, 'frontend', 'dist', 'frontend', 'browser');
     }
-    return path.join(this.projectRoot, 'frontend', 'dist', 'frontend', 'browser');
+    return path.join(process.resourcesPath || '', 'frontend', 'dist', 'frontend', 'browser');
   }
 
   static get preloadPath(): string {
